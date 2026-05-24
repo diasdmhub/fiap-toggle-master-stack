@@ -1,0 +1,27 @@
+# ---------- Build ----------
+FROM docker.io/library/golang:alpine AS builder
+WORKDIR /src
+
+# Copia somente os arquivos necessários - Esta etapa é incluída no cache
+COPY ./evaluation-service/evaluator.go \
+     ./evaluation-service/go.mod \
+     ./evaluation-service/handlers.go \
+     ./evaluation-service/main.go \
+     ./evaluation-service/sqs.go \
+     ./evaluation-service/types.go ./
+RUN go mod tidy
+
+# Contrução do binário estático
+RUN CGO_ENABLED=0 GOOS=linux \
+    go build -ldflags='-s -w' -v -o /src/evaluation.go .
+
+
+# ---------- Runtime ----------
+FROM docker.io/library/alpine:latest
+WORKDIR /app
+
+# Copia o binário a partir da imagem "builder"
+COPY --from=builder /src/evaluation.go /app/evaluation.go
+
+EXPOSE 8004
+CMD ["/app/evaluation.go"]

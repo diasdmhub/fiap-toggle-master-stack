@@ -1,0 +1,17 @@
+# Definição de variáveis de configuração não-sensíveis
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: evaluation-config
+  namespace: toggle
+  annotations:
+    description: "Variáveis de configuração não-sensíveis"
+data:
+  # Porta em que o evaluation-service receberá requisições
+  PORT: "8004"
+  # URL do flag-service (que deve estar executando na porta 8002)
+  FLAG_SERVICE_URL: "http://flag:8002"
+  # URL do targeting-service (que deve estar executando na porta 8003)
+  TARGETING_SERVICE_URL: "http://targeting:8003"
+  # Região da fila SQS
+  AWS_REGION: "us-east-1"

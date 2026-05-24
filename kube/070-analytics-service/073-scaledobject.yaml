@@ -1,0 +1,42 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: analytics-service-trigger-auth
+  namespace: toggle
+spec:
+  podIdentity:
+    provider: aws
+    identityOwner: workload   # O KEDA assume a identidade do SA do workload
+
+---
+
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: analytics-service-scale
+  namespace: toggle
+spec:
+  scaleTargetRef:
+    name: analytics-service
+
+# Mínimo de 0 pods caso não haja mensagens na fila
+  minReplicaCount: 0
+  maxReplicaCount: 5
+  pollingInterval: 15
+
+# 5 minutos sem mensagens antes de zerar os pods
+  cooldownPeriod: 300
+  triggers:
+  - type: aws-sqs-queue
+    authenticationRef:
+      name: analytics-service-trigger-auth
+    metadata:
+# Mapeia a secret AWS_SQS_URL a partir do deployment
+      queueURLFromEnv: AWS_SQS_URL_SEC
+
+# Indica o tamanho da fila até escalar os pods
+      queueLength: "10"
+      awsRegion: "us-east-1"
+
+# Threshold de 1 mensagem ativa os pods
+      activationQueueLength: "1"

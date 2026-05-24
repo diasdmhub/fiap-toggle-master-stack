@@ -1,0 +1,185 @@
+networks:
+  toggle-net:
+    driver: bridge
+    enable_ipv6: true
+
+volumes:
+  postgres:
+
+services:
+  redis:
+    image: docker.io/library/redis:alpine
+    container_name: redis
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    networks:
+      - toggle-net
+
+  psql:
+    build:
+      dockerfile: Dockerfile-psql
+#    image: docker.io/library/postgres:18-alpine
+    container_name: postgresql
+    restart: unless-stopped
+    env_file: .env_psql
+#    environment:
+#      - POSTGRES_USER=${POSTGRES_USER}
+#      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+#      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres:/var/lib/postgresql
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toggle -d toggle_db"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - toggle-net
+
+  auth:
+    build:
+      dockerfile: Dockerfile-auth
+#    image: docker.io/library/golang:alpine
+    container_name: auth-service
+    env_file: .env_auth
+    ports:
+      - 8001:8001
+#    environment:
+#      - DATABASE_URL=${DATABASE_URL}
+#      - PORT=${PORT}
+#      - MASTER_KEY=${MASTER_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://auth:8001/health"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    depends_on:
+      psql:
+        condition: service_healthy
+    networks:
+      - toggle-net
+
+  flag:
+    build:
+      dockerfile: Dockerfile-flag
+#    image: docker.io/library/python:3-slim
+    container_name: flag-service
+    env_file: .env_flag
+    ports:
+      - 8002:8002
+#    environment:
+#      - DATABASE_URL=${DATABASE_URL}
+#      - PORT=${PORT}
+#      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+    depends_on:
+      psql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://flag:8002/health"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    networks:
+      - toggle-net
+
+  targeting:
+    build:
+      dockerfile: Dockerfile-targeting
+#    image: docker.io/library/python:3-slim
+    container_name: targeting-service
+    env_file: .env_targeting
+    ports:
+      - 8003:8003
+#    environment:
+#      - DATABASE_URL=${DATABASE_URL}
+#      - PORT=${PORT}
+#      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+    depends_on:
+      psql:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://targeting:8003/health"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    networks:
+      - toggle-net
+
+  evaluation:
+    build:
+      dockerfile: Dockerfile-evaluation
+#    image: docker.io/library/golang:alpine
+    container_name: evaluation-service
+    env_file:
+      - .env_evaluation
+      - .env_aws
+    ports:
+      - 8004:8004
+#    environment:
+#      - PORT=${PORT}
+#      - REDIS_URL=${REDIS_URL}
+#      - FLAG_SERVICE_URL=${FLAG_SERVICE_URL}
+#      - TARGETING_SERVICE_URL=${TARGETING_SERVICE_URL}
+#      - SERVICE_API_KEY=${SERVICE_API_KEY}
+#      - AWS_REGION=${AWS_REGION}
+#      - AWS_SQS_URL=${AWS_SQS_URL}
+    depends_on:
+#      redis:
+#        condition: service_healthy
+      auth:
+        condition: service_healthy
+      flag:
+        condition: service_healthy
+      targeting:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://evaluation:8004/health"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    networks:
+      - toggle-net
+
+  analytics:
+    build:
+      dockerfile: Dockerfile-analytics
+#    image: docker.io/library/python:3-slim
+    container_name: analytics-service
+    env_file:
+      - .env_analytics
+      - .env_aws
+    ports:
+      - 8005:8005
+#    environment:
+#      - PORT=${PORT}
+#      - AWS_REGION=${AWS_REGION}
+#      - AWS_SQS_URL=${AWS_SQS_URL}
+#      - AWS_DYNAMODB_TABLE=${AWS_DYNAMODB_TABLE}
+    depends_on:
+      evaluation:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://analytics:8005/health"]
+      start_interval: 5s
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    networks:
+      - toggle-net

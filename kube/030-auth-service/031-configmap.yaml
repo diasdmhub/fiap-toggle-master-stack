@@ -1,0 +1,11 @@
+# Definição de variáveis de configuração não-sensíveis
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: toggle
+  annotations:
+    description: "Variáveis de configuração não-sensíveis"
+data:
+  # Porta em que o auth-service irá receber requisições
+  PORT: "8001"

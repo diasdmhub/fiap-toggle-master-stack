@@ -1,0 +1,17 @@
+# ---------- Build ----------
+# Base Alpine para redução do tamanho da imagem de execução
+FROM docker.io/library/python:3-alpine
+WORKDIR /usr/src/targeting
+
+# Copia somente os requisitos para o cache desta camada
+COPY ./targeting-service/requirements.txt ./
+
+# Instala as dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copio o script principal
+COPY ./targeting-service/app.py ./targeting.py
+
+# ----------- Run -----------
+EXPOSE 8003
+CMD [ "gunicorn", "--bind", "0.0.0.0:8003", "targeting:app" ]

@@ -1,0 +1,13 @@
+# Definição de variáveis de configuração não-sensíveis
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: targeting-config
+  namespace: toggle
+  annotations:
+    description: "Variáveis de configuração não-sensíveis"
+data:
+  # Porta que este serviço (targeting-service) utiliza
+  PORT: "8003"
+  # URL do auth-service (que deve estar executando na porta 8001)
+  AUTH_SERVICE_URL: "http://auth:8001"

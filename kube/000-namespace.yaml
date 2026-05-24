@@ -1,0 +1,8 @@
+# Definição do Namespace da ToggleMaster
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: toggle
+  annotations:
+    description: "Namespace da ToggleMaster"
+    creator: diasdm

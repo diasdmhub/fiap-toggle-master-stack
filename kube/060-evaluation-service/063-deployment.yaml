@@ -1,0 +1,87 @@
+# Definição de Pods para a aplicação Evaluation
+# É NECESSÁRIO DEFINIR ABAIXO O REPOSITÓRIO DA IMAGEM
+# algo como 123456789012.abc.def.region.amazonaws.com/toggle/evaluation-service:latest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evaluation-service
+  namespace: toggle
+  labels:
+    app: evaluation-service
+  annotations:
+    description: "Definição de Pods para a aplicação Evaluation"
+
+spec:
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: evaluation-service
+  template:
+    metadata:
+      labels:
+        app: evaluation-service
+    spec:
+      serviceAccountName: fiap-toggle-serv-acc
+      containers:
+      - name: evaluation
+        image: toggle/evaluation-service
+        ports:
+        - containerPort: 8004
+
+# Indicação do ConfigMap e Secrets para o serviço
+        envFrom:
+        - configMapRef:
+            name: evaluation-config
+        - secretRef:
+            name: evaluation-secrets
+        - secretRef:
+            name: sqs-secrets
+
+# Definição de recursos (requests e limits - 1:4)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "400m"
+            memory: "512Mi"
+
+# Definição de probes de saúde para o serviço
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8004
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8004
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+---
+
+# Definição de Service para a aplicação Evaluation
+apiVersion: v1
+kind: Service
+metadata:
+  name: evaluation
+  namespace: toggle
+  annotations:
+    description: "Service para a aplicação Evaluation"
+spec:
+  selector:
+    app: evaluation-service
+  ports:
+  - port: 8004
+    targetPort: 8004
+    protocol: TCP
+
+# Serviço Externo do tipo LoadBalancer
+  type: LoadBalancer

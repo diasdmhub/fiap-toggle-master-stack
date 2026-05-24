@@ -1,0 +1,13 @@
+# Ref: https://hub.docker.com/_/postgres
+
+# Imagem Alpine
+FROM docker.io/library/postgres:18-alpine
+
+# Copia o script SQL do auth-service para que o Postgres crie a tabela api_keys
+COPY ./auth-service/db/init.sql /docker-entrypoint-initdb.d/init-auth-service.sql
+
+# Copia o script SQL do flag-service para que o Postgres crie a tabela flags
+COPY ./flag-service/db/init.sql /docker-entrypoint-initdb.d/init-flag-service.sql
+
+# Copia o script SQL do targeting-service para que o Postgres crie a tabela targeting_rules
+COPY ./targeting-service/db/init.sql /docker-entrypoint-initdb.d/init-targeting-service.sql

@@ -1,0 +1,96 @@
+# Job Kubernetes que inicializa o banco de dados PostgreSQL do RDS com as
+# tabelas dos microserviços da ToggleMaster antes do deploy da aplicação.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+  namespace: toggle
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # executa após o Secret db-secrets ser criado
+spec:
+  # Número de tentativas antes de falhar
+  backoffLimit: 3
+  template:
+    metadata:
+      name: db-init
+      labels:
+        app: db-init
+        component: database-migration
+    spec:
+      restartPolicy: OnFailure
+      # initContainer: aguarda o RDS estar acessível antes de executar psql #
+      initContainers:
+        - name: wait-for-rds
+          image: postgres:18-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Aguardando conectividade com o RDS PostgreSQL..."
+              until pg_isready --dbname="$DB_URL" --timeout=5; do
+                echo "RDS ainda não está pronto. Tentando novamente em 5s..."
+                sleep 5
+              done
+              echo "RDS está acessível."
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: DATABASE_URL
+      # Container principal: executa os scripts init.sql
+      containers:
+        - name: db-init
+          image: postgres:18-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e  # Aborta em caso de erro
+              # auth-service: cria as tabelas do serviço de autenticação
+              echo ""
+              echo "--- [1/3] auth-service ---"
+              psql "$DB_URL" -v ON_ERROR_STOP=1 -f /sql/auth-init.sql
+              echo "--- auth-service: OK ---"
+              # flag-service: cria as tabelas do serviço de feature flags
+              echo ""
+              echo "--- [2/3] flag-service ---"
+              psql "$DB_URL" -v ON_ERROR_STOP=1 -f /sql/flag-init.sql
+              echo "--- flag-service: OK ---"
+              # targeting-service: cria as tabelas do serviço de targeting
+              echo ""
+              echo "--- [3/3] targeting-service ---"
+              psql "$DB_URL" -v ON_ERROR_STOP=1 -f /sql/targeting-init.sql
+              echo "--- targeting-service: OK ---"
+              echo ""
+              echo "==> Inicialização do banco de dados concluída com sucesso."
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: sql-scripts
+              mountPath: /sql
+              readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+      volumes:
+        - name: sql-scripts
+          configMap:
+            # Nome definido em kustomization.yaml (configMapGenerator)
+            name: db-init-sql
+            items:
+              - key: auth-init.sql
+                path: auth-init.sql
+              - key: flag-init.sql
+                path: flag-init.sql
+              - key: targeting-init.sql
+                path: targeting-init.sql

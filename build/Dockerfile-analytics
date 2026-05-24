@@ -1,0 +1,17 @@
+# ---------- Build ----------
+# Base Alpine para redução do tamanho da imagem de execução
+FROM docker.io/library/python:3-alpine
+WORKDIR /usr/src/analytics
+
+# Copia somente os requisitos para o cache desta camada
+COPY ./analytics-service/requirements.txt ./
+
+# Instala as dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o script principal
+COPY ./analytics-service/app.py ./analytics.py
+
+# ----------- Run -----------
+EXPOSE 8005
+CMD [ "gunicorn", "--bind", "0.0.0.0:8005", "analytics:app" ]

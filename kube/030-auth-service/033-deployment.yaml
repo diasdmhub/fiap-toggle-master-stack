@@ -1,0 +1,87 @@
+# Definição de Pods para a aplicação Auth
+# É NECESSÁRIO DEFINIR ABAIXO O REPOSITÓRIO DA IMAGEM
+# algo como 123456789012.abc.def.region.amazonaws.com/toggle/auth-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: toggle
+  labels:
+    app: auth-service
+  annotations:
+    description: "Definição de Pods para a aplicação Auth"
+
+spec:
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      serviceAccountName: fiap-toggle-serv-acc
+      containers:
+      - name: auth
+        image: toggle/auth-service
+        ports:
+        - containerPort: 8001
+
+# Indicação do ConfigMap e Secrets para o serviço
+        envFrom:
+        - configMapRef:
+            name: auth-config
+        - secretRef:
+            name: auth-secrets
+        - secretRef:
+            name: db-secrets
+
+# Definição de recursos (requests e limits - 1:5)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "500m"
+            memory: "320Mi"
+
+# Definição de probes de saúde para o serviço
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+---
+
+# Definição de Service para a aplicação Auth
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: toggle
+  annotations:
+    description: "Service para a aplicação Auth"
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+
+# Serviço interno do tipo ClusterIP
+  type: ClusterIP

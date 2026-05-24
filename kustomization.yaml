@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - kube/000-namespace.yaml
+  - kube/005-secret-store.yaml
+  - kube/010-secrets-db.yaml
+  - kube/011-db-init.yaml
+  - kube/020-secrets-sqs.yaml
+  - kube/030-auth-service/031-configmap.yaml
+  - kube/030-auth-service/032-secrets.yaml
+  - kube/030-auth-service/033-deployment.yaml
+  - kube/040-flag-service/041-configmap.yaml
+  - kube/040-flag-service/042-deployment.yaml
+  - kube/050-targeting-service/051-configmap.yaml
+  - kube/050-targeting-service/052-deployment.yaml
+  - kube/060-evaluation-service/061-configmap.yaml
+  - kube/060-evaluation-service/062-secrets.yaml
+  - kube/060-evaluation-service/063-deployment.yaml
+  - kube/070-analytics-service/071-configmap.yaml
+  - kube/070-analytics-service/072-deployment.yaml
+  - kube/070-analytics-service/073-scaledobject.yaml
+
+images:
+  - name: toggle/auth-service
+    newTag: 1.0.14
+  - name: toggle/flag-service
+    newTag: 1.0.14
+  - name: toggle/targeting-service
+    newTag: 1.0.14
+  - name: toggle/evaluation-service
+    newTag: 1.0.14
+  - name: toggle/analytics-service
+    newTag: 1.0.14
+
+# Gera o ConfigMap com os scripts SQL no diretório build
+# ConfigMap personalizado para evitar cópias extras da inicialização das tabelas de BD
+configMapGenerator:
+  - name: db-init-sql
+    namespace: toggle
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+    files:
+      - auth-init.sql=build/auth-service/db/init.sql
+      - flag-init.sql=build/flag-service/db/init.sql
+      - targeting-init.sql=build/targeting-service/db/init.sql

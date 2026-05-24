@@ -1,0 +1,117 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: togglemaster
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/account/repo  # ATUALIZE COM A URL DO SEU REPOSITÓRIO
+    targetRevision: HEAD
+    path: .
+
+    kustomize:
+      # Definição das imagens
+      images:
+        - toggle/auth-service=
+        - toggle/flag-service=
+        - toggle/targeting-service=
+        - toggle/evaluation-service=
+        - toggle/analytics-service=
+
+      patches:
+        # -----------------------------------------------------------------------
+        # ORDEM SYNC-WAVE
+        # A cadeia de dependências é:
+        #   wave -4 | Namespace
+        #   wave -3 │ ClusterSecretStore   (005-secret-store.yaml)
+        #   wave -2 │ ExternalSecret       (010-secrets-db.yaml)
+        #   wave -1 │ Job db-init          (011-db-init.yaml, wave no manifesto)
+        #   wave  0 │ todos os demais recursos (padrão)
+        # -----------------------------------------------------------------------
+
+        # Namespace - wave mais baixo para existir antes de tudo
+        - target:
+            kind: Namespace
+          patch: |-
+            - op: add
+              path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+              value: "-4"
+
+        # Definição dos configmaps
+        - target:
+            kind: ConfigMap
+            name: evaluation-config
+          patch: |-
+            - op: replace
+              path: /data/AWS_REGION
+              value:  # ATUALIZE ESTE CAMPO
+        - target:
+            kind: ConfigMap
+            name: analytics-config
+          patch: |-
+            - op: replace
+              path: /data/AWS_REGION
+              value:  # ATUALIZE ESTE CAMPO
+            - op: replace
+              path: /data/AWS_DYNAMODB_TABLE
+              value:  # ATUALIZE ESTE CAMPO
+
+        # Definição do secret store
+        - target:
+            kind: ClusterSecretStore
+            name: aws-secrets-manager
+          patch: |-
+            - op: replace
+              path: /spec/provider/aws/region
+              value:  # ATUALIZE ESTE CAMPO
+            - op: replace
+              path: /spec/provider/aws/auth/jwt/serviceAccountRef/name
+              value:  # ATUALIZE ESTE CAMPO
+            - op: add
+              path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+              value: "-3"
+
+        # Definição do namespace dos secrets
+        - target:
+            kind: ExternalSecret
+            name: db-secrets
+          patch: |-
+            - op: replace
+              path: /spec/data/0/remoteRef/key
+              value:  # ATUALIZE ESTE CAMPO
+            - op: add
+              path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+              value: "-2"
+        - target:
+            kind: ExternalSecret
+            name: sqs-secrets
+          patch: |-
+            - op: replace
+              path: /spec/data/0/remoteRef/key
+              value:  # ATUALIZE ESTE CAMPO
+        - target:
+            kind: ExternalSecret
+            name: auth-secrets
+          patch: |-
+            - op: replace
+              path: /spec/data/0/remoteRef/key
+              value:  # ATUALIZE ESTE CAMPO
+        - target:
+            kind: ExternalSecret
+            name: evaluation-secrets
+          patch: |-
+            - op: replace
+              path: /spec/data/0/remoteRef/key
+              value:  # ATUALIZE ESTE CAMPO
+            - op: replace
+              path: /spec/data/1/remoteRef/key
+              value:  # ATUALIZE ESTE CAMPO
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: toggle
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

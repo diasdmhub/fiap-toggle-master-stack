@@ -1,0 +1,85 @@
+# Definição de Pods para a aplicação Flag
+# É NECESSÁRIO DEFINIR ABAIXO O REPOSITÓRIO DA IMAGEM
+# algo como 123456789012.abc.def.region.amazonaws.com/toggle/flag-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flag-service
+  namespace: toggle
+  labels:
+    app: flag-service
+  annotations:
+    description: "Definição de Pods para a aplicação Flag"
+
+spec:
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: flag-service
+  template:
+    metadata:
+      labels:
+        app: flag-service
+    spec:
+      serviceAccountName: fiap-toggle-serv-acc
+      containers:
+      - name: flag
+        image: toggle/flag-service
+        ports:
+        - containerPort: 8002
+
+# Indicação do ConfigMap e Secrets para o serviço
+        envFrom:
+        - configMapRef:
+            name: flag-config
+        - secretRef:
+            name: db-secrets
+
+# Definição de recursos (requests e limits - 1:4)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "400m"
+            memory: "512Mi"
+
+# Definição de probes de saúde para o serviço
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+---
+
+# Definição de Service para a aplicação Flag
+apiVersion: v1
+kind: Service
+metadata:
+  name: flag
+  namespace: toggle
+  annotations:
+    description: "Service para a aplicação Flag"
+spec:
+  selector:
+    app: flag-service
+  ports:
+  - port: 8002
+    targetPort: 8002
+    protocol: TCP
+
+# Serviço interno do tipo ClusterIP
+  type: ClusterIP

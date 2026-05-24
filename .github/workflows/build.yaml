@@ -1,0 +1,365 @@
+name: ToggleMaster Microservices - CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - build/**
+  pull_request:
+    branches: [ main ]
+    paths:
+      - build/**
+  workflow_dispatch:
+
+# Permissões para OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TAG_VERSION: "1.0.15"
+  PYTHON_VERSION: "3.14"
+  GO_VERSION: "stable"
+  TRIVY_VERSION: "0.70.0"
+
+jobs:
+  tests:
+    name: CI Tests - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth
+            language: go
+            dockerfile: build/Dockerfile-auth
+            code_dir: build/auth-service
+            go_version: stable
+            serv_port: 8001
+
+          - service: flag
+            language: python
+            dockerfile: build/Dockerfile-flag
+            code_dir: build/flag-service
+            python_version: "3.14"
+            serv_port: 8002
+
+          - service: targeting
+            language: python
+            dockerfile: build/Dockerfile-targeting
+            code_dir: build/targeting-service
+            python_version: "3.14"
+            serv_port: 8003
+
+          - service: evaluation
+            language: go
+            dockerfile: build/Dockerfile-evaluation
+            code_dir: build/evaluation-service
+            go_version: stable
+            serv_port: 8004
+
+          - service: analytics
+            language: python
+            dockerfile: build/Dockerfile-analytics
+            code_dir: build/analytics-service
+            python_version: "3.14"
+            serv_port: 8005
+
+    services:
+      # PSQL para testes dos microserviços
+      postgres:
+        image: docker.io/library/postgres:18-alpine
+        # container_name: psql
+        env:
+          POSTGRES_USER: toggle
+          POSTGRES_PASSWORD: toggle
+          POSTGRES_DB: toggle
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 3
+
+      # Redis para testes dos microserviços
+      redis:
+        image: docker.io/library/redis:alpine
+        # container_name: redis
+        ports:
+          - 6379:6379
+
+    steps:
+      # 1. Checkout
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # Inicializa o PSQL após o checkout, quando os arquivos já existem
+      - name: Inicializar PSQL
+        run: |
+          psql postgres://toggle:toggle@localhost:5432/toggle \
+            -f build/auth-service/db/init.sql \
+            -f build/flag-service/db/init.sql \
+            -f build/targeting-service/db/init.sql
+
+      # 2. Setup do Go e do Python
+      - name: Setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go_version }}
+          cache: true
+
+      - name: Setup Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      # 3. Linter / Análise Estática
+      - name: Go Lint (golangci-lint)
+        if: matrix.language == 'go'
+        env:
+          GOLANGCI_LINT_CACHE: ~/.cache/golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: "latest"
+          working-directory: "./${{ matrix.code_dir }}"
+          args: "--modules-download-mode=mod"
+
+      - name: Python Lint (Ruff)
+        if: matrix.language == 'python'
+        uses: astral-sh/ruff-action@v4.0.0
+        with:
+            version: "latest"
+            src: "./${{ matrix.code_dir }}"
+
+      # 4. Local Build e Unit Test
+      - name: Preparação de dependências (Go)
+        if: matrix.language == 'go'
+        working-directory: ${{ matrix.code_dir }}
+        run: go mod tidy
+
+      - name: Teste unitário (Go)
+        if: matrix.language == 'go'
+        working-directory: ${{ matrix.code_dir }}
+        run: |
+          export PORT="${{ matrix.serv_port }}"
+          export DATABASE_URL="postgres://toggle:toggle@localhost:5432/toggle"
+          export MASTER_KEY="admin123"
+          export REDIS_URL="redis://localhost:6379"
+          export FLAG_SERVICE_URL="http://localhost:8002"
+          export TARGETING_SERVICE_URL="http://localhost:8003"
+          export SERVICE_API_KEY="SUA_CHAVE_DE_SERVICO"
+          export AWS_SQS_URL="https://sqs.us-east-1.amazonaws.com/123456789012/sua-fila"
+          export AWS_REGION="${{ secrets.AWS_REGION }}"
+          go run . > gorun.log 2>&1 &
+          echo "### Resultado do teste unitário: " >> $GITHUB_STEP_SUMMARY
+          for i in 1 2; do sleep 2; cat gorun.log; curl -fsS "http://localhost:${{ matrix.serv_port }}/health" >> $GITHUB_STEP_SUMMARY && exit 0 || { echo "Health FAIL - $i" >> $GITHUB_STEP_SUMMARY; exit 1; } done
+
+      - name: Preparação de dependências (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        run: pip install -r requirements.txt
+
+      - name: Teste unitário (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        run: |
+          export PORT="${{ matrix.serv_port }}"
+          export DATABASE_URL="postgres://toggle:toggle@localhost:5432/toggle"
+          export AUTH_SERVICE_URL="http://localhost:8001"
+          export AWS_SQS_URL="https://sqs.us-east-1.amazonaws.com/123456789012/sua-fila"
+          export AWS_DYNAMODB_TABLE="ToggleMasterAnalytics"
+          export AWS_REGION="${{ secrets.AWS_REGION }}"
+          gunicorn --bind 0.0.0.0:${{ matrix.serv_port }} app:app > gunicorn.log 2>&1 &
+          echo "### Resultado do teste unitário: " >> $GITHUB_STEP_SUMMARY
+          for i in 1 2; do sleep 2; cat gunicorn.log; curl -fsS "http://localhost:${{ matrix.serv_port }}/health" >> $GITHUB_STEP_SUMMARY && exit 0 || { echo "Health FAIL - $i" >> $GITHUB_STEP_SUMMARY; exit 1; } done
+
+      # 5. SCA - Trivy filesystem (bloqueia vulnerabilidade crítica)
+      # Fixa as versões do requirements para o Trivy
+      - name: Prepara o requirements para o Trivy (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        run: pip -v freeze > requirements.txt
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Setup Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
+          sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
+
+      # Usa o Trivy diretamente pois não precisa de autenticação no Github
+      - name: SCA - Trivy
+        run: |
+          trivy fs \
+          --cache-dir ~/.cache/trivy \
+          --skip-version-check \
+          --disable-telemetry \
+          --format table \
+          --exit-code 1 \
+          --severity CRITICAL \
+          --ignore-unfixed \
+          --pkg-types library \
+          --scanners vuln \
+          "${{ github.workspace }}/${{ matrix.code_dir }}"
+
+      # 6. SAST específico por linguagem (não bloqueia automaticamente)
+      - name: SAST - gosec (Go)
+        if: matrix.language == 'go'
+        continue-on-error: true
+        uses: securego/gosec@master
+        with:
+          args: "./${{ matrix.code_dir }}/..."
+
+      # Usa o Bandit diretamente pois não precisa de autenticação no Github para o relatório
+      - name: SAST - bandit (Python)
+        if: matrix.language == 'python'
+        working-directory: ${{ matrix.code_dir }}
+        continue-on-error: true
+        run: |
+          pip install bandit
+          bandit -q -lll -iii -f txt -s B104 -r .
+
+  build:
+    name: Build - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: tests  # Executa somente após os testes
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth
+            dockerfile: build/Dockerfile-auth
+            ecr_repo: toggle/auth-service
+
+          - service: flag
+            dockerfile: build/Dockerfile-flag
+            ecr_repo: toggle/flag-service
+
+          - service: targeting
+            dockerfile: build/Dockerfile-targeting
+            ecr_repo: toggle/targeting-service
+
+          - service: evaluation
+            dockerfile: build/Dockerfile-evaluation
+            ecr_repo: toggle/evaluation-service
+
+          - service: analytics
+            dockerfile: build/Dockerfile-analytics
+            ecr_repo: toggle/analytics-service
+
+    steps:
+      # 1. Checkout
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # 2. Docker Build
+      - name: Setup do Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build do microserviço
+        uses: docker/build-push-action@v7
+        with:
+          context: ./build
+          file: ./${{ matrix.dockerfile }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+          tags: ${{ matrix.service }}-service:${{ github.sha }}
+          push: false
+
+      # 3. Container image scan
+      - name: Cache Trivy DB
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Setup Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
+          sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
+
+      # Usa o Trivy diretamente pois não precisa de autenticação no Github
+      - name: SCA - Trivy
+        run: |
+          trivy image \
+          --cache-dir ~/.cache/trivy \
+          --skip-version-check \
+          --disable-telemetry \
+          --format table \
+          --exit-code 1 \
+          --severity CRITICAL \
+          --ignore-unfixed \
+          --pkg-types library \
+          --scanners vuln \
+          "${{ matrix.service }}-service:${{ github.sha }}"
+
+      # OIDC praticamente não funcional fora do GitHub
+      - name: Configurar credenciais AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACC_ID }}:role/${{ secrets.AWS_GIT_ROLE }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: true
+
+      # Login no AWS ECR
+      # Não funcional fora do GitHub
+      - name: Login no AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 4. Push para o AWS ECR
+      - name: Push do microserviço ao ECR
+        env:
+          REGISTRY: ${{ secrets.AWS_ACC_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          docker tag ${{ matrix.service }}-service:${{ github.sha }} ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:v${{ env.TAG_VERSION }}-${SHORT_SHA}
+          docker push ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:v${{ env.TAG_VERSION }}-${SHORT_SHA}
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            docker tag ${{ matrix.service }}-service:${{ github.sha }} ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:latest
+            docker push ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:latest
+          fi
+
+  push-update-tag:
+    name: Update das tags no Kustomize
+    runs-on: ubuntu-latest
+    needs: build  # Executa somente após os builds
+    permissions:
+      contents: write
+
+    steps:
+      # 1. Checkout
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+  
+      # 2. Atualiza a tag da image
+      - name: Update image tags
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          NEW_TAG="v${{ env.TAG_VERSION }}-${SHORT_SHA}"
+          sed -i "s/newTag: .*/newTag: ${NEW_TAG}/" kustomization.yaml
+
+      # 3. Envia um push para o kustomization
+      - name: Commit and push
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kustomization.yaml
+          git commit -m "CI: bump tag das imagens para v${{ env.TAG_VERSION }}-${SHORT_SHA}"
+          git push

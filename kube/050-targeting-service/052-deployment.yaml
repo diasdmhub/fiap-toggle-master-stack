@@ -1,0 +1,85 @@
+# Definição de Pods para a aplicação Targeting
+# É NECESSÁRIO DEFINIR ABAIXO O REPOSITÓRIO DA IMAGEM
+# algo como 123456789012.abc.def.region.amazonaws.com/toggle/targeting-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: targeting-service
+  namespace: toggle
+  labels:
+    app: targeting-service
+  annotations:
+    description: "Definição de Pods para a aplicação Targeting"
+
+spec:
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: targeting-service
+  template:
+    metadata:
+      labels:
+        app: targeting-service
+    spec:
+      serviceAccountName: fiap-toggle-serv-acc
+      containers:
+      - name: targeting
+        image: toggle/targeting-service
+        ports:
+        - containerPort: 8003
+
+# Indicação do ConfigMap e Secrets para o serviço
+        envFrom:
+        - configMapRef:
+            name: targeting-config
+        - secretRef:
+            name: db-secrets
+
+# Definição de recursos (requests e limits - 1:4)
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "400m"
+            memory: "512Mi"
+
+# Definição de probes de saúde para o serviço
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 5
+
+---
+
+# Definição de Service para a aplicação Targeting
+apiVersion: v1
+kind: Service
+metadata:
+  name: targeting
+  namespace: toggle
+  annotations:
+    description: "Service para a aplicação Targeting"
+spec:
+  selector:
+    app: targeting-service
+  ports:
+  - port: 8003
+    targetPort: 8003
+    protocol: TCP
+
+# Serviço interno do tipo ClusterIP
+  type: ClusterIP

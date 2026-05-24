@@ -1,0 +1,17 @@
+# ---------- Build ----------
+# Base Alpine para redução do tamanho da imagem de execução
+FROM docker.io/library/python:3-alpine
+WORKDIR /usr/src/flag
+
+# Copia somente os requisitos para o cache desta camada
+COPY ./flag-service/requirements.txt ./
+
+# Instala as dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o script principal
+COPY ./flag-service/app.py ./flag.py
+
+# ----------- Run -----------
+EXPOSE 8002
+CMD [ "gunicorn", "--bind", "0.0.0.0:8002", "flag:app" ]
