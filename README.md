@@ -1,3 +1,3 @@
-# fiap-toggle-master-stack
+# Tech Challenge Fase 4 - Stack "ToggleMaster"
 
-Projeto usado para a Fase 4 do curso DCLT da FIAP 
+> Análise geral e implementação comentada do "desafio" da Fase 4 do curso DevOps e Arquitetura Cloud da FIAP.
