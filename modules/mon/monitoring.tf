@@ -56,9 +56,7 @@ resource "helm_release" "prometheus_stack" {
             url       = "http://loki-gateway.monitoring.svc.cluster.local"
             access    = "proxy"
             isDefault = false
-            jsonData = {
-              maxLines = 1000
-            }
+            jsonData = { maxLines = 1000 }
           }
         ]
 
@@ -66,19 +64,15 @@ resource "helm_release" "prometheus_stack" {
         dashboardProviders = {
           "dashboardproviders.yaml" = {
             apiVersion = 1
-            providers = [
-              {
-                name            = "default"
-                orgId           = 1
-                folder          = ""
-                type            = "file"
-                disableDeletion = false
-                editable        = true
-                options = {
-                  path = "/var/lib/grafana/dashboards/default"
-                }
-              }
-            ]
+            providers = [{
+              name            = "default"
+              orgId           = 1
+              folder          = ""
+              type            = "file"
+              disableDeletion = false
+              editable        = true
+              options = { path = "/var/lib/grafana/dashboards/default" }
+              }]
           }
         }
 
@@ -102,14 +96,9 @@ resource "helm_release" "prometheus_stack" {
           }
         }
 
-        service = {
-          type = var.grafana_service_type
-        }
+        service = { type = var.grafana_service_type }
 
-        persistence = {
-          enabled = true
-          size    = "5Gi"
-        }
+        persistence = { enabled = false }
       }
 
       # Prometheus
@@ -133,24 +122,14 @@ resource "helm_release" "prometheus_stack" {
             volumeClaimTemplate = {
               spec = {
                 accessModes = ["ReadWriteOnce"]
-                resources = {
-                  requests = {
-                    storage = "20Gi"
-                  }
-                }
+                resources   = { requests = { storage = "20Gi" } }
               }
             }
           }
 
           resources = {
-            requests = {
-              cpu    = "200m"
-              memory = "512Mi"
-            }
-            limits = {
-              cpu    = "1000m"
-              memory = "2Gi"
-            }
+            requests = { cpu = "200m", memory = "512Mi" }
+            limits   = { cpu = "1000m", memory = "2Gi" }
           }
         }
       }
@@ -163,18 +142,14 @@ resource "helm_release" "prometheus_stack" {
             volumeClaimTemplate = {
               spec = {
                 accessModes = ["ReadWriteOnce"]
-                resources = {
-                  requests = {
-                    storage = "2Gi"
-                  }
-                }
+                resources   = { requests = { storage = "2Gi" } }
               }
             }
           }
         }
       }
 
-      nodeExporter    = { enabled = true }
+      nodeExporter     = { enabled = true }
       kubeStateMetrics = { enabled = true }
     })
   ]
@@ -214,23 +189,16 @@ resource "helm_release" "loki" {
       loki = {
         auth_enabled = false
 
-        commonConfig = {
-          replication_factor = 1
-        }
+        commonConfig = { replication_factor = 1 }
 
         schemaConfig = {
-          configs = [
-            {
-              from         = "2024-01-01"
-              store        = "tsdb"
-              object_store = "filesystem"
-              schema       = "v13"
-              index = {
-                prefix = "loki_index_"
-                period = "24h"
-              }
-            }
-          ]
+          configs = [{
+            from         = "2024-01-01"
+            store        = "tsdb"
+            object_store = "filesystem"
+            schema       = "v13"
+            index        = { prefix = "loki_index_", period = "24h" }
+          }]
         }
 
         storage = { type = "filesystem" }
@@ -241,17 +209,15 @@ resource "helm_release" "loki" {
           volume_enabled            = true
           otlp_config = {
             resource_attributes = {
-              attributes_config = [
-                {
-                  action = "index_label"
-                  attributes = [
-                    "k8s.namespace.name",
-                    "k8s.pod.name",
-                    "k8s.container.name",
-                    "service.name"
-                  ]
-                }
-              ]
+              attributes_config = [{
+                action = "index_label"
+                attributes = [
+                  "k8s.namespace.name",
+                  "k8s.pod.name",
+                  "k8s.container.name",
+                  "service.name"
+                ]
+              }]
             }
           }
         }
@@ -269,13 +235,17 @@ resource "helm_release" "loki" {
         }
       }
 
-      # Gateway HTTP — endpoint único para leitura/escrita
+      # Gateway HTTP - endpoint único para leitura/escrita
       gateway = {
         enabled = true
         service = { type = "ClusterIP" }
       }
 
       # Componentes desnecessários no modo SingleBinary
+      # desabilita o Memcached (chunks-cache)
+      chunksCache = { enabled = false }
+      resultsCache = { enabled = false }
+      
       backend    = { replicas = 0 }
       read       = { replicas = 0 }
       write      = { replicas = 0 }
@@ -351,22 +321,17 @@ resource "helm_release" "otel_collector" {
       ]
 
       # Variável de ambiente para identificar o nó atual
-      env = [
-        {
-          name = "K8S_NODE_NAME"
-          valueFrom = { fieldRef = { fieldPath = "spec.nodeName" } }
-        }
-      ]
+      env = [{
+        name      = "K8S_NODE_NAME"
+        valueFrom = { fieldRef = { fieldPath = "spec.nodeName" } }
+      }]
 
       resources = {
         requests = { cpu = "100m", memory = "256Mi" }
         limits   = { cpu = "500m", memory = "512Mi" }
       }
 
-      serviceMonitor = {
-        enabled   = true
-        namespace = "monitoring"
-      }
+      serviceMonitor = { enabled = true, namespace = "monitoring" }
 
       # Pipeline do OTel Collector
       config = {
@@ -390,12 +355,13 @@ resource "helm_release" "otel_collector" {
 
           # Lê arquivos de log de todos os containers do nó
           filelog = {
-            include = ["/var/log/pods/*/*/*.log"]
-            exclude = ["/var/log/pods/*/otel-collector*/*.log"]
+            include           = ["/var/log/pods/*/*/*.log"]
+            exclude           = ["/var/log/pods/*/otel-collector*/*.log"]
             include_file_path = true
             include_file_name = false
             operators = [
-              { type = "router", id = "get-format",
+              {
+                type   = "router", id = "get-format",
                 routes = [
                   { output = "parser-docker", expr = "body matches \"^\\\\{\"" },
                   { output = "parser-containerd", expr = "body matches \"^[^ Z]+Z\"" }
@@ -441,25 +407,14 @@ resource "helm_release" "otel_collector" {
 
           # Adiciona o nome do cluster EKS como atributo de recurso
           resource = {
-            attributes = [
-              {
-                key    = "k8s.cluster.name"
-                value  = "${var.name_prefix}-eks-cluster"
-                action = "upsert"
-              }
-            ]
+            attributes = [{
+              key    = "k8s.cluster.name"
+              value  = "${var.name_prefix}-eks-cluster"
+              action = "upsert"
+            }]
           }
-
-          batch = {
-            send_batch_size = 1000
-            timeout         = "10s"
-          }
-
-          memory_limiter = {
-            check_interval        = "1s"
-            limit_percentage      = 75
-            spike_limit_percentage = 20
-          }
+          batch          = { send_batch_size = 1000, timeout = "10s" }
+          memory_limiter = { check_interval = "1s", limit_percentage = 75, spike_limit_percentage = 20 }
         }
 
         exporters = {
@@ -477,11 +432,7 @@ resource "helm_release" "otel_collector" {
           }
 
           # Debug - reduzir ou remover em produção
-          debug = {
-            verbosity          = "normal"
-            sampling_initial   = 5
-            sampling_thereafter = 200
-          }
+          debug = { verbosity = "normal", sampling_initial = 5, sampling_thereafter = 200 }
         }
 
         extensions = {
