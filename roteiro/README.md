@@ -1,12 +1,12 @@
 # 🛠️ Roteiro de Implementação
 
-Para a implementação inicial, é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente e de acordo com suas características.
+Para a implementação, similar à [fase 3 do projeto][fase3], é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente e de acordo com suas características.
 
 <BR>
 
 ## 1 Variáveis Terraform
 
-O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente**.
+O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser definido com as principais variáveis do ambiente, incluindo a senha inicial do Grafana. Embora seja disponibilizado um arquivo de exemplo (`terraform.tfvars.example`) com alguns valores pré-definidos, é **altamente recomendado que as variáveis a seguir sejam definidas de acordo com o ambiente**.
 
 > ⚠️ **Note que este arquivo contém dados sensíveis e deve ter seu acesso restrito. Ele é ignorado pelo Git.**
 
@@ -119,7 +119,7 @@ Com o **ambiente AWS criado e os repositórios ECR disponíveis**, os microservi
 | :------------: | :-------------- |
 | `AWS_ACC_ID`   | ID da conta AWS |
 | `AWS_REGION`   | Região da AWS   |
-| `AWS_GIT_ROLE` | Nome da "role" da AWS para o Git Actions. _Esta role é criada pelo Terraform e pode ser consultada com `terraform output oidc_outputs`_ |
+| `AWS_GIT_ROLE` | Nome da "role" da AWS para o Git Actions. _Esta role é criada pelo Terraform e pode ser consultada com `terraform output -json oidc_outputs | jq -r .git_actions_role_name`_ |
 
 <BR>
 
@@ -251,6 +251,7 @@ for i in $(seq 1000); do { curl "http://abc614f-123.us-east-1.elb.amazonaws.com:
 
 > ⚠️ **Esse comando envia muitas mensagens ao ToggleMaster, portanto pode levar um tempo, pois o serviço precisa se comunicar com a AWS. Se preferir, basta reduzir o número de mensagens enviadas para acelerar o processo.**
 
+[fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [init]: /init.sh
 [helm]: https://helm.sh/docs/intro/install
 [argocdcli]: https://argo-cd.readthedocs.io/en/stable/cli_installation/
