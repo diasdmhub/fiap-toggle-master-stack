@@ -124,11 +124,6 @@ def sqs_worker_loop():
 
 app = Flask(__name__)
 
-# --- Prometheus
-metrics = PrometheusMetrics(app)
-# Labels
-metrics.info("app_info", "Application info", version="1.0", service="flag-service")
-
 @app.route('/health')
 def health():
     # Uma verificação de saúde real poderia checar a conexão com o DynamoDB/SQS

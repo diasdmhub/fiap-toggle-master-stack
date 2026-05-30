@@ -23,11 +23,6 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# --- Prometheus
-metrics = PrometheusMetrics(app)
-# Labels
-metrics.info("app_info", "Application info", version="1.0", service="targeting-service")
-
 # --- Configuração ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
