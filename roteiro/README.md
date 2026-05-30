@@ -19,7 +19,11 @@ O arquivo de [variáveis do Terraform][tfvars] (`terraform.tfvars`) deve ser def
 | `db_username` | Usuário master do PostgreSQL | _vazio_ |
 | `db_password` | Senha do usuário master | _vazio_ |
 | `git_org` | Domínio provedor Git | _vazio_ |
-| `git_repo` | Repositório do provedor Git | _vazio_ |
+| `git_repo` | Nome do repositório do provedor Git | _fiap-toggle-master-stack_ |
+| `service_type` | Tipo de serviço para o ArgoCD | _ClusterIP_ |
+| `grafana_pass` | Senha do usuário admin do Grafana | _vazio_ |
+| `grafana_service_type` | Tipo de serviço do Grafana | _ClusterIP_ |
+
 
 Copie o arquivo de exemplo e edite ele com os valores do seu ambiente.
 
