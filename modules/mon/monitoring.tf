@@ -46,7 +46,7 @@ resource "helm_release" "prometheus_stack" {
       # Grafana
       grafana = {
         enabled       = true
-        adminPassword = var.grafana_admin_password
+        adminPassword = var.grafana_pass
 
         # Datasources provisionados automaticamente
         additionalDataSources = [
