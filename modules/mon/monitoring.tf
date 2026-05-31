@@ -272,7 +272,8 @@ resource "helm_release" "otel_collector" {
       ports = {
         otlp      = { enabled = true, containerPort = 4317, protocol = "TCP" }
         otlp-http = { enabled = true, containerPort = 4318, protocol = "TCP" }
-        metrics   = { enabled = true, containerPort = 8888, protocol = "TCP" }
+        # metrics (8888) é gerenciado internamente pelo collector
+        # metrics   = { enabled = true, containerPort = 8888, protocol = "TCP" }
       }
 
       # RBAC para leitura de recursos k8s (kubeletstats + k8sattributes)
@@ -281,8 +282,8 @@ resource "helm_release" "otel_collector" {
         rules = [
           {
             apiGroups = [""]
-            resources = ["nodes", "nodes/proxy", "nodes/metrics", "services",
-              "endpoints", "pods", "namespaces"]
+            resources = ["nodes", "nodes/proxy", "nodes/metrics", "nodes/stats",
+              "services", "endpoints", "pods", "namespaces"]
             verbs = ["get", "list", "watch"]
           },
           {
