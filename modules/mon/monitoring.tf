@@ -2,11 +2,11 @@ terraform {
   required_providers {
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 3.1.1"
+      version = "~> 3.1"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 3.1.0"
+      version = "~> 3.1"
     }
   }
 }
@@ -135,19 +135,7 @@ resource "helm_release" "prometheus_stack" {
       }
 
       # Alertmanager
-      alertmanager = {
-        enabled = true
-        alertmanagerSpec = {
-          storage = {
-            volumeClaimTemplate = {
-              spec = {
-                accessModes = ["ReadWriteOnce"]
-                resources   = { requests = { storage = "2Gi" } }
-              }
-            }
-          }
-        }
-      }
+      alertmanager = { enabled = false }
 
       nodeExporter     = { enabled = true }
       kubeStateMetrics = { enabled = true }
@@ -321,7 +309,7 @@ resource "helm_release" "otel_collector" {
       ]
 
       # Variável de ambiente para identificar o nó atual
-      env = [{
+      extraEnvs = [{
         name      = "K8S_NODE_NAME"
         valueFrom = { fieldRef = { fieldPath = "spec.nodeName" } }
       }]
@@ -361,7 +349,7 @@ resource "helm_release" "otel_collector" {
             include_file_name = false
             operators = [
               {
-                type   = "router", id = "get-format",
+                type   = "router", id = "get-format"
                 routes = [
                   { output = "parser-docker", expr = "body matches \"^\\\\{\"" },
                   { output = "parser-containerd", expr = "body matches \"^[^ Z]+Z\"" }
