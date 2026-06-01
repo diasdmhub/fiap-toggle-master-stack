@@ -264,10 +264,10 @@ resource "helm_release" "otel_collector" {
       # DaemonSet: um pod por nó para coleta local de métricas e logs
       mode = "daemonset"
 
-      image = {
-        repository = "otel/opentelemetry-collector-contrib"
-        tag        = "0.105.0"
-      }
+      # image = {
+      #   repository = "otel/opentelemetry-collector-contrib"
+      #   tag        = "0.105.0"
+      # }
 
       ports = {
         otlp      = { enabled = true, containerPort = 4317, protocol = "TCP" }
