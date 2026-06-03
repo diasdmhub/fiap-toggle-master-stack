@@ -24,8 +24,7 @@ resource "kubernetes_namespace_v1" "monitoring" {
 
 
 # 1. kube-prometheus-stack
-#    Inclui: Prometheus, Grafana, Alertmanager,
-#            Node Exporter e kube-state-metrics
+#    Inclui: Prometheus, Grafana, Node Exporter e kube-state-metrics
 resource "helm_release" "prometheus_stack" {
   name       = "prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
@@ -227,6 +226,20 @@ resource "helm_release" "loki" {
       gateway = {
         enabled = true
         service = { type = "ClusterIP" }
+      }
+
+      monitoring = {
+        serviceMonitor = {
+          enabled = true
+          labels = {
+            # Label que o kube-prometheus-stack usa para descobrir ServiceMonitors
+            release = "prometheus-stack"
+          }
+        }
+        selfMonitoring = {
+          enabled = false
+          grafanaAgent = { installOperator = false }
+        }
       }
 
       # Componentes desnecessários no modo SingleBinary
