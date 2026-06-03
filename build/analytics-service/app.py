@@ -10,6 +10,10 @@ from botocore.exceptions import NoCredentialsError, ClientError
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
+# Prometheus exporter imports
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Counter, Histogram, Gauge
+
 # Configura o logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -119,7 +123,6 @@ def sqs_worker_loop():
 
 
 app = Flask(__name__)
-
 
 @app.route('/health')
 def health():

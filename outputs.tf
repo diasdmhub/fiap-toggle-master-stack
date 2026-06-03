@@ -64,3 +64,8 @@ output "secrets_outputs" {
   value       = module.secrets
   description = "Outputs do modulo Secrets"
 }
+
+output "monitoring_outputs" {
+  value       = module.mon
+  description = "Outputs do módulo Monitoring Stack"
+}

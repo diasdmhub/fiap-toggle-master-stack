@@ -133,3 +133,21 @@ module "secrets" {
 
   depends_on               = [module.rds, module.sqs, module.cache]
 }
+
+module "mon" {
+  source = "./modules/mon"
+
+  name_prefix          = var.name_prefix
+  cluster_endpoint     = module.eks.eks_cluster_endpoint
+  cluster_ca           = module.eks.eks_cluster_ca
+  cluster_name         = module.eks.eks_cluster_name
+  grafana_pass         = var.grafana_pass
+  grafana_service_type = var.grafana_service_type
+
+  # Versões dos charts (vazio usa a versão mais recente)
+  prometheus_chart_version = var.prometheus_chart_version
+  loki_chart_version       = var.loki_chart_version
+  otel_chart_version       = var.otel_chart_version
+
+  depends_on = [module.eks]
+}

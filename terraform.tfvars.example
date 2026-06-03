@@ -1,13 +1,21 @@
 # Edite o terraform.tfvars com os valores do seu ambiente
-name_prefix   = "fiap-toggle"
-aws_region    = "us-east-1"
-subnet_prefix = "10.12"
-db_name       = "toggle_db"
-db_username   = "toggle"
-db_password   = "togglemaster"
-git_org       = "git_acc"
-git_repo      = "fiap-toggle-master-iaas"
-service_type  = "ClusterIP"
+name_prefix          = "fiap-toggle"
+aws_region           = "us-east-1"
+subnet_prefix        = "10.12"
+db_name              = "toggle_db"
+db_username          = "toggle"
+db_password          = "togglemaster"   # Troque por uma senha segura
+git_org              = "git_acc"
+git_repo             = "fiap-toggle-master-stack"
+service_type         = "ClusterIP"
+grafana_pass         = "togglemaster"   # Troque por uma senha segura
+grafana_service_type = "ClusterIP"
+
+# Inclua a versão do chart para fixá-la
+# prometheus_chart_version = ""
+# loki_chart_version       = ""
+# otel_chart_version       = ""
+
 
 # Também é possível utilizar variáveis de ambiente ao anexar o prefixo "TF_VAR_" às variáveis.
 # export TF_VAR_name_prefix="fiap-toggle"
@@ -17,5 +25,7 @@ service_type  = "ClusterIP"
 # export TF_VAR_db_username="toggle"
 # export TF_VAR_db_password="togglemaster"
 # export TF_VAR_git_org="git_acc"
-# export TF_VAR_git_repo="fiap-toggle-master-iaas"
+# export TF_VAR_git_repo="fiap-toggle-master-stack"
 # export TF_VAR_service_type="ClusterIP"
+# export TF_VAR_grafana_pass="togglemaster"
+# export TF_VAR_grafana_service_type="ClusterIP"

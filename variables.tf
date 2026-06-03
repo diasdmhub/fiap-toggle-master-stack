@@ -112,3 +112,35 @@ variable "namespace" {
   type        = string
   default     = "toggle"
 }
+
+# Variáveis do Monitoring Stack
+#############################
+variable "grafana_pass" {
+  description = "Senha do usuário admin do Grafana"
+  type        = string
+  sensitive   = true
+}
+ 
+variable "grafana_service_type" {
+  description = "Tipo de serviço do Grafana (ClusterIP ou LoadBalancer)"
+  type        = string
+  default     = "ClusterIP"
+}
+ 
+variable "prometheus_chart_version" {
+  description = "Versão do Helm chart kube-prometheus-stack (vazio para latest)"
+  type        = string
+  default     = ""
+}
+ 
+variable "loki_chart_version" {
+  description = "Versão do Helm chart do Loki (vazio para latest)"
+  type        = string
+  default     = ""
+}
+ 
+variable "otel_chart_version" {
+  description = "Versão do Helm chart do OpenTelemetry Collector (vazio para latest)"
+  type        = string
+  default     = ""
+}
