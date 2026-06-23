@@ -148,6 +148,7 @@ module "mon" {
   prometheus_chart_version = var.prometheus_chart_version
   loki_chart_version       = var.loki_chart_version
   otel_chart_version       = var.otel_chart_version
+  tempo_chart_version      = var.tempo_chart_version
 
   depends_on = [module.eks]
 }

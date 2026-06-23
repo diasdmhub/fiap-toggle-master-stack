@@ -9,9 +9,22 @@ COPY ./targeting-service/requirements.txt ./
 # Instala as dependências
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copio o script principal
+# Gera e instala os pacotes de auto-instrumentação para todas as bibliotecas instaladas
+# (substitui opentelemetry-bootstrap -a install, que não existe em todas as versões)
+RUN pip install --no-cache-dir opentelemetry-instrumentation || true
+
+# Copia o script principal
 COPY ./targeting-service/app.py ./targeting.py
 
 # ----------- Run -----------
 EXPOSE 8003
-CMD [ "gunicorn", "--bind", "0.0.0.0:8003", "targeting:app" ]
+
+# opentelemetry-instrument envolve o gunicorn sem alterar nenhum código de aplicação.
+# OTEL_SERVICE_NAME pode ser sobrescrito via ConfigMap no Kubernetes.
+ENV OTEL_SERVICE_NAME="targeting-service" \
+    OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317" \
+    OTEL_EXPORTER_OTLP_INSECURE="true" \
+    OTEL_PYTHON_LOG_CORRELATION="true" \
+    OTEL_PROPAGATORS="tracecontext,baggage"
+
+CMD [ "opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8003", "targeting:app" ]

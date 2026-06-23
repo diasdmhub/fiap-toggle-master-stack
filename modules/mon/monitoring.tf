@@ -52,10 +52,31 @@ resource "helm_release" "prometheus_stack" {
           {
             name      = "Loki"
             type      = "loki"
+            uid       = "loki"
             url       = "http://loki-gateway.monitoring.svc.cluster.local"
             access    = "proxy"
             isDefault = false
             jsonData = { maxLines = 1000 }
+          },
+          {
+            name      = "Tempo"
+            type      = "tempo"
+            uid       = "tempo"
+            url       = "http://tempo.monitoring.svc.cluster.local:3200"
+            access    = "proxy"
+            isDefault = false
+            jsonData = {
+              # Permite pular do trace direto para os logs correlatos no Loki
+              tracesToLogsV2 = {
+                datasourceUid = "loki"
+                spanStartTimeShift = "-5m"
+                spanEndTimeShift   = "5m"
+                filterByTraceID    = true
+                tags = [{ key = "service.name", value = "service_name" }]
+              }
+              serviceMap = { datasourceUid = "prometheus" }
+              nodeGraph  = { enabled = true }
+            }
           }
         ]
 
@@ -228,19 +249,19 @@ resource "helm_release" "loki" {
         service = { type = "ClusterIP" }
       }
 
-      monitoring = {
-        serviceMonitor = {
-          enabled = true
-          labels = {
-            # Label que o kube-prometheus-stack usa para descobrir ServiceMonitors
-            release = "prometheus-stack"
-          }
-        }
-        selfMonitoring = {
-          enabled = false
-          grafanaAgent = { installOperator = false }
-        }
-      }
+      # monitoring = {
+      #   serviceMonitor = {
+      #     enabled = true
+      #     labels = {
+      #       # Label que o kube-prometheus-stack usa para descobrir ServiceMonitors
+      #       release = "prometheus-stack"
+      #     }
+      #   }
+      #   selfMonitoring = {
+      #     enabled = false
+      #     grafanaAgent = { installOperator = false }
+      #   }
+      # }
 
       # Componentes desnecessários no modo SingleBinary
       # desabilita o Memcached (chunks-cache)
@@ -262,9 +283,70 @@ resource "helm_release" "loki" {
 }
 
 
-# 3. OpenTelemetry Collector
+# 3. Grafana Tempo
+#    Armazena e indexa os traces distribuídos (modo single-binary,
+#    mesmo padrão usado para o Loki: simples para lab/staging)
+resource "helm_release" "tempo" {
+  name       = "tempo"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "tempo"
+  version    = var.tempo_chart_version != "" ? var.tempo_chart_version : null
+  namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  values = [
+    yamlencode({
+      tempo = {
+        retention = "120h" # 5 dias, alinhado com a retenção do Prometheus
+
+        # Apenas o receiver OTLP é necessário; o OTel Collector é o único emissor
+        receivers = {
+          otlp = {
+            protocols = {
+              grpc = { endpoint = "0.0.0.0:4317" }
+              http = { endpoint = "0.0.0.0:4318" }
+            }
+          }
+        }
+
+        storage = {
+          trace = {
+            backend = "local"
+            local   = { path = "/var/tempo/traces" }
+            wal     = { path = "/var/tempo/wal" }
+          }
+        }
+
+        resources = {
+          requests = { cpu = "100m", memory = "256Mi" }
+          limits   = { cpu = "500m", memory = "1Gi" }
+        }
+      }
+
+      persistence = {
+        enabled = true
+        size    = "10Gi"
+      }
+
+      serviceMonitor = {
+        enabled         = true
+        additionalLabels = { release = "prometheus-stack" }
+      }
+    })
+  ]
+
+  timeout = 300
+  wait    = true
+
+  depends_on = [
+    kubernetes_namespace_v1.monitoring,
+    helm_release.prometheus_stack
+  ]
+}
+
+
+# 4. OpenTelemetry Collector
 #    Recebe, processa e roteia métricas
-#    logs e traces para Prometheus e Loki
+#    logs e traces para Prometheus, Loki e Tempo
 resource "helm_release" "otel_collector" {
   name       = "otel-collector"
   repository = "https://open-telemetry.github.io/opentelemetry-helm-charts"
@@ -276,6 +358,13 @@ resource "helm_release" "otel_collector" {
     yamlencode({
       # DaemonSet: um pod por nó para coleta local de métricas e logs
       mode = "daemonset"
+
+      # Por padrão, o chart só cria um Service quando mode != daemonset.
+      # Precisamos habilitar explicitamente para que as apps no namespace
+      # 'toggle' tenham um endereço estável (Service ClusterIP) para enviar OTLP.
+      service = {
+        enabled = true
+      }
 
       image = {
         repository = "otel/opentelemetry-collector-contrib"
@@ -433,6 +522,12 @@ resource "helm_release" "otel_collector" {
             tls      = { insecure = true }
           }
 
+          # Envia traces ao Tempo via OTLP gRPC nativo
+          "otlp/tempo" = {
+            endpoint = "tempo.monitoring.svc.cluster.local:4317"
+            tls      = { insecure = true }
+          }
+
           # Debug - reduzir ou remover em produção
           debug = { verbosity = "normal", sampling_initial = 5, sampling_thereafter = 200 }
         }
@@ -458,11 +553,11 @@ resource "helm_release" "otel_collector" {
               processors = ["memory_limiter", "k8sattributes", "resource", "batch"]
               exporters  = ["otlphttp/loki"]
             }
-            # Traces: OTLP das apps - debug
+            # Traces: OTLP dos apps - Tempo
             traces = {
               receivers  = ["otlp"]
               processors = ["memory_limiter", "k8sattributes", "resource", "batch"]
-              exporters  = ["debug"]
+              exporters  = ["otlp/tempo", "debug"]
             }
           }
         }
@@ -476,9 +571,10 @@ resource "helm_release" "otel_collector" {
   timeout = 300
   wait    = true
 
-  # OTel deve subir depois de Prometheus e Loki (endpoints já disponíveis)
+  # OTel deve subir depois de Prometheus, Loki e Tempo (endpoints já disponíveis)
   depends_on = [
     helm_release.prometheus_stack,
-    helm_release.loki
+    helm_release.loki,
+    helm_release.tempo
   ]
 }

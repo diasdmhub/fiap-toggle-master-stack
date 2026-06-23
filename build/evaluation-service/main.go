@@ -10,8 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Contexto global para o Redis
@@ -29,6 +31,15 @@ type App struct {
 
 func main() {
 	_ = godotenv.Load() // Carrega .env para dev local
+
+	// --- OpenTelemetry (tracing distribuído) ---
+	otelCtx := context.Background()
+	otelShutdown, err := setupOTel(otelCtx, "evaluation-service")
+	if err != nil {
+		log.Printf("Aviso: não foi possível inicializar o OpenTelemetry: %v", err)
+	} else {
+		defer func() { _ = otelShutdown(otelCtx) }()
+	}
 
 	// --- Configuração ---
 	port := os.Getenv("PORT")
@@ -63,12 +74,16 @@ func main() {
 
 	// --- Inicializa Clientes ---
 	
-	// Cliente Redis
+	// Cliente Redis com hook de tracing OTel automático
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		log.Fatalf("Não foi possível parsear a URL do Redis: %v", err)
 	}
 	rdb := redis.NewClient(opt)
+	// redisotel.v8: adiciona hook que cria spans para cada comando Redis,
+	// propagando o trace context automaticamente.
+	rdb.AddHook(redisotel.NewTracingHook())
+
 	if _, err := rdb.Ping(ctx).Result(); err != nil {
 		log.Fatalf("Não foi possível conectar ao Redis: %v", err)
 	}
@@ -85,9 +100,11 @@ func main() {
 		log.Println("Cliente SQS inicializado com sucesso.")
 	}
 
-	// Cliente HTTP (com timeout)
+	// Cliente HTTP instrumentado: propaga traceparent automaticamente
+	// em todas as chamadas de saída para flag-service e targeting-service.
 	httpClient := &http.Client{
-		Timeout: 5 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Timeout:   5 * time.Second,
 	}
 
 	// Cria a instância da App
@@ -100,10 +117,10 @@ func main() {
 		TargetingServiceURL: targetingSvcURL,
 	}
 
-	// --- Rotas ---
+	// --- Rotas (todas envolvidas por otelhttp para criar server-spans) ---
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", app.healthHandler)
-	mux.HandleFunc("/evaluate", app.evaluationHandler)
+	mux.Handle("/health", otelhttp.NewHandler(http.HandlerFunc(app.healthHandler), "GET /health"))
+	mux.Handle("/evaluate", otelhttp.NewHandler(http.HandlerFunc(app.evaluationHandler), "GET /evaluate"))
 
 	log.Printf("Serviço de Avaliação (Go) rodando na porta %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {

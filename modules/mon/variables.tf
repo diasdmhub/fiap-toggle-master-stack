@@ -36,6 +36,12 @@ variable "otel_chart_version" {
   default     = ""
 }
 
+variable "tempo_chart_version" {
+  description = "Versão do Helm chart do Grafana Tempo (vazio para latest)"
+  type        = string
+  default     = ""
+}
+
 variable "grafana_pass" {
   description = "Senha do usuário admin do Grafana"
   type        = string

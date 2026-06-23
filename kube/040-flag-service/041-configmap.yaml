@@ -11,3 +11,11 @@ data:
   PORT: "8002"
   # URL do auth-service (que deve estar executando na porta 8001)
   AUTH_SERVICE_URL: "http://auth:8001"
+  # --- OpenTelemetry ---
+  # Endpoint do OTel Collector (DaemonSet com Service habilitado)
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+  OTEL_EXPORTER_OTLP_INSECURE: "true"
+  OTEL_PROPAGATORS: "tracecontext,baggage"
+  # Logs correlacionados: injeta trace_id/span_id nos registros de log
+  OTEL_PYTHON_LOG_CORRELATION: "true"
+  OTEL_SERVICE_NAME: "flag-service"

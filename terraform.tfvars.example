@@ -15,6 +15,7 @@ grafana_service_type = "ClusterIP"
 # prometheus_chart_version = ""
 # loki_chart_version       = ""
 # otel_chart_version       = ""
+# tempo_chart_version      = ""
 
 
 # Também é possível utilizar variáveis de ambiente ao anexar o prefixo "TF_VAR_" às variáveis.
