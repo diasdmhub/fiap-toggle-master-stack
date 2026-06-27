@@ -23,15 +23,15 @@ resources:
 
 images:
   - name: toggle/auth-service
-    newTag: 1.0.14
+    newTag: 1.1.0
   - name: toggle/flag-service
-    newTag: 1.0.14
+    newTag: 1.1.0
   - name: toggle/targeting-service
-    newTag: 1.0.14
+    newTag: 1.1.0
   - name: toggle/evaluation-service
-    newTag: 1.0.14
+    newTag: 1.1.0
   - name: toggle/analytics-service
-    newTag: 1.0.14
+    newTag: 1.1.0
 
 # Gera o ConfigMap com os scripts SQL no diretório build
 # ConfigMap personalizado para evitar cópias extras da inicialização das tabelas de BD

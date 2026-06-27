@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  TAG_VERSION: "1.0.15"
+  TAG_VERSION: "1.1.0"
   PYTHON_VERSION: "3.14"
   GO_VERSION: "stable"
   TRIVY_VERSION: "0.70.0"
@@ -333,6 +333,8 @@ jobs:
             docker tag ${{ matrix.service }}-service:${{ github.sha }} ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:latest
             docker push ${{ env.REGISTRY }}/${{ matrix.ecr_repo }}:latest
           fi
+          echo "### Push ao ECR:" >> $GITHUB_STEP_SUMMARY
+          echo "OK - ${{ matrix.service }}-service v${{ env.TAG_VERSION }}-${SHORT_SHA}" >> $GITHUB_STEP_SUMMARY
 
   push-update-tag:
     name: Update das tags no Kustomize
