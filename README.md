@@ -6,5 +6,5 @@
 
 ## Considerações
 
-- A stack de monitoração tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso o novo módulo de monitoramento do Terraform (`/modules/monitoring`) foi adicionado.
+- A stack de monitoração tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
 - A implementaçao de APMs como Datadog ou New Relic é desconsiderada nesta fase pois são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. O Datadog exige conexão com serviços terceiros (_GitHub_) para acesso educativo, e o portal do New Relic estava recusando conexões (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Sendo assim, entendo que essas ferramentas não trazem benefícios aos usuários para fins educacionais. Portanto, o Grafana Tempo é utilizado, pois ele já é integrado ao Grafana, não possui custos e é open-source.
