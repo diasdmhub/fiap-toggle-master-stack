@@ -144,3 +144,9 @@ variable "otel_chart_version" {
   type        = string
   default     = ""
 }
+ 
+variable "tempo_chart_version" {
+  description = "Versão do Helm chart do Grafana Tempo (vazio para latest)"
+  type        = string
+  default     = ""
+}

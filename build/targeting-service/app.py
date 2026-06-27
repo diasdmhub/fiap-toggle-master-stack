@@ -10,10 +10,6 @@ from dotenv import load_dotenv
 from functools import wraps
 import logging
 
-# Prometheus exporter imports
-from prometheus_flask_exporter import PrometheusMetrics
-from prometheus_client import Counter, Histogram, Gauge
-
 # Configura o logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)

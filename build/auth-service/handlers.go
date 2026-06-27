@@ -7,6 +7,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Estrutura para o corpo da requisição de criação de chave
@@ -41,9 +45,21 @@ func (a *App) validateKeyHandler(w http.ResponseWriter, r *http.Request) {
 	// Calcula o hash da chave recebida
 	keyHash := hashAPIKey(keyString)
 
-	// Verifica se o hash existe no banco de dados
+	// Verifica se o hash existe no banco de dados (span manual para a query)
+	dbCtx, dbSpan := tracer.Start(r.Context(), "api_keys SELECT",
+		trace.WithAttributes(
+			semconv.DBSystemPostgreSQL,
+			semconv.DBOperationName("SELECT"),
+			semconv.DBCollectionName("api_keys"),
+		),
+	)
 	var id int
-	err := a.DB.QueryRow("SELECT id FROM api_keys WHERE key_hash = $1 AND is_active = true", keyHash).Scan(&id)
+	err := a.DB.QueryRowContext(dbCtx, "SELECT id FROM api_keys WHERE key_hash = $1 AND is_active = true", keyHash).Scan(&id)
+	if err != nil {
+		dbSpan.RecordError(err)
+		dbSpan.SetStatus(codes.Error, err.Error())
+	}
+	dbSpan.End()
 	if err != nil {
 		// Se não encontrar (sql.ErrNoRows), ou qualquer outro erro, a chave é inválida
 		log.Printf("Falha na validação da chave (hash: %s...): %v", keyHash[:6], err)

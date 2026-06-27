@@ -8,6 +8,7 @@ COPY ./evaluation-service/evaluator.go \
      ./evaluation-service/handlers.go \
      ./evaluation-service/main.go \
      ./evaluation-service/sqs.go \
+     ./evaluation-service/telemetry.go \
      ./evaluation-service/types.go ./
 RUN go mod tidy
 
