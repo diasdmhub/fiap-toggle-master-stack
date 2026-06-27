@@ -60,9 +60,9 @@ func (a *App) sendEvaluationEvent(ctx context.Context, userID, flagName string, 
 	ctx, span := tracer.Start(ctx, "SQS SendMessage",
 		trace.WithSpanKind(trace.SpanKindProducer),
 		trace.WithAttributes(
-			semconv.MessagingSystemAWSSQS,
+			semconv.MessagingSystemAWSSqs,
 			semconv.MessagingDestinationName(a.SqsQueueURL),
-			semconv.MessagingOperationTypeSend,
+			semconv.MessagingOperationTypePublish,
 		),
 	)
 	defer span.End()
