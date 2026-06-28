@@ -68,7 +68,7 @@ resource "aws_iam_role_policy_attachment" "eks_nodes_AmazonEC2ContainerRegistryR
 resource "aws_eks_cluster" "main" {
   name     = "${var.name_prefix}-eks-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
-  version  = "1.35"
+  version  = "1.36"
 
   vpc_config {
     # ENIs do control plane em subnets privadas
