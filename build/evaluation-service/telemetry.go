@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -21,6 +23,9 @@ const defaultOTLPEndpoint = "otel-collector-opentelemetry-collector.monitoring.s
 // tracer é usado por evaluator.go, sqs.go e handlers.go para criar spans manuais.
 var tracer = otel.Tracer("evaluation-service")
 
+// setupOTel inicializa TracerProvider e MeterProvider com exportadores OTLP/gRPC
+// compartilhando a mesma conexão. O MeterProvider é necessário para que o
+// otelhttp emita http.server.duration automaticamente.
 func setupOTel(ctx context.Context, serviceName string) (func(context.Context) error, error) {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
@@ -33,11 +38,7 @@ func setupOTel(ctx context.Context, serviceName string) (func(context.Context) e
 		return nil, err
 	}
 
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
-	if err != nil {
-		return nil, err
-	}
-
+	// --- Resource (atributos comuns a traces e métricas) ---
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(serviceName),
@@ -51,17 +52,40 @@ func setupOTel(ctx context.Context, serviceName string) (func(context.Context) e
 		return nil, err
 	}
 
+	// --- TracerProvider ---
+	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	if err != nil {
+		return nil, err
+	}
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
+		sdktrace.WithBatcher(traceExporter),
 		sdktrace.WithResource(res),
 	)
-
 	otel.SetTracerProvider(tp)
+
+	// --- MeterProvider ---
+	metricExporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
+	if err != nil {
+		return nil, err
+	}
+	mp := metric.NewMeterProvider(
+		metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+		metric.WithResource(res),
+	)
+	otel.SetMeterProvider(mp)
+
+	// --- Propagador W3C ---
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
 	))
 
 	log.Printf("OpenTelemetry inicializado (service=%s, endpoint=%s)", serviceName, endpoint)
-	return tp.Shutdown, nil
+
+	return func(ctx context.Context) error {
+		if err := mp.Shutdown(ctx); err != nil {
+			log.Printf("Erro ao encerrar MeterProvider: %v", err)
+		}
+		return tp.Shutdown(ctx)
+	}, nil
 }

@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  TAG_VERSION: "1.1.0"
+  TAG_VERSION: "1.1.1"
   PYTHON_VERSION: "3.14"
   GO_VERSION: "stable"
   TRIVY_VERSION: "0.70.0"
