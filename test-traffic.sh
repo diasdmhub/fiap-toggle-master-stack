@@ -142,9 +142,9 @@ for i in $(seq 1 "$REQUESTS"); do
     "${EVAL_ENDPOINT}/evaluate?user_id=${USER_ID}&flag_name=${FNAME}" || echo "000")
 
   if [[ "$HTTP_CODE" == "200" ]]; then
-    ((RESULTS_OK++))
+    RESULTS_OK=$((RESULTS_OK + 1))
   else
-    ((RESULTS_ERR++))
+    RESULTS_ERR=$((RESULTS_ERR + 1))
   fi
 
   # Barra de progresso simples a cada 10 requests
