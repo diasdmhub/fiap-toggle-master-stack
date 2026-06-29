@@ -316,6 +316,23 @@ resource "helm_release" "tempo" {
           }
         }
 
+        # Metrics Generator: converte spans em métricas de serviço e
+        # de span metrics, escrevendo-as no Prometheus via remote_write.
+        # Isso alimenta o painel "Service Graph" e os painéis RED do Grafana.
+        metricsGenerator = {
+          enabled        = true
+          # URL de remote_write do Prometheus gerado pelo kube-prometheus-stack
+          remoteWriteUrl = "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+        }
+
+        # Habilita os processadores para todos os tenants (single-tenant setup)
+        global_overrides = {
+          metrics_generator_processors = [
+            "service-graphs", # gera traces_service_graph_request_total
+            "span-metrics",   # gera traces_spanmetrics_calls_total
+          ]
+        }
+
         resources = {
           requests = { cpu = "100m", memory = "256Mi" }
           limits   = { cpu = "500m", memory = "1Gi" }
