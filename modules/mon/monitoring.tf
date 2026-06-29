@@ -327,10 +327,14 @@ resource "helm_release" "tempo" {
 
         # Habilita os processadores para todos os tenants (single-tenant setup)
         global_overrides = {
-          metrics_generator_processors = [
-            "service-graphs", # gera traces_service_graph_request_total
-            "span-metrics",   # gera traces_spanmetrics_calls_total
-          ]
+          defaults = {
+            metrics_generator = {
+              processors = [
+                "service-graphs", # gera traces_service_graph_request_total
+                "span-metrics",   # gera traces_spanmetrics_calls_total
+              ]
+            }
+          }
         }
 
         resources = {
