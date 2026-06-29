@@ -95,7 +95,7 @@
         "description": "",
         "id": 10,
         "links": [],
-        "title": "flag-service — Latência (p50 / p95 / p99)",
+        "title": "flag-service - Latência (p50 / p95 / p99)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -252,7 +252,7 @@
         "description": "",
         "id": 11,
         "links": [],
-        "title": "targeting-service — Latência (p50 / p95 / p99)",
+        "title": "targeting-service - Latência (p50 / p95 / p99)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -409,7 +409,7 @@
         "description": "",
         "id": 12,
         "links": [],
-        "title": "evaluation-service — Latência (p50 / p95 / p99)",
+        "title": "evaluation-service - Latência (p50 / p95 / p99)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -566,7 +566,7 @@
         "description": "",
         "id": 13,
         "links": [],
-        "title": "analytics-service — Latência (p50 / p95 / p99)",
+        "title": "analytics-service - Latência (p50 / p95 / p99)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -761,7 +761,7 @@
         "description": "",
         "id": 14,
         "links": [],
-        "title": "CPU — todos os pods (toggle)",
+        "title": "CPU - todos os pods (toggle)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -956,7 +956,7 @@
         "description": "",
         "id": 15,
         "links": [],
-        "title": "Memória — todos os pods (toggle)",
+        "title": "Memória - todos os pods (toggle)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -1738,7 +1738,7 @@
         "description": "",
         "id": 7,
         "links": [],
-        "title": "Requisições por segundo — todos os serviços",
+        "title": "Requisições por segundo - todos os serviços",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -1935,7 +1935,7 @@
         "description": "",
         "id": 8,
         "links": [],
-        "title": "Taxa de Erros (5xx) — todos os serviços",
+        "title": "Taxa de Erros (5xx) - todos os serviços",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -2098,7 +2098,7 @@
         "description": "",
         "id": 9,
         "links": [],
-        "title": "auth-service — Latência (p50 / p95 / p99)",
+        "title": "auth-service - Latência (p50 / p95 / p99)",
         "vizConfig": {
           "group": "timeseries",
           "kind": "VizConfig",
@@ -2423,7 +2423,7 @@
                 ]
               }
             },
-            "title": "💾 Recursos — CPU e Memória"
+            "title": "💾 Recursos - CPU e Memória"
           }
         },
         {
