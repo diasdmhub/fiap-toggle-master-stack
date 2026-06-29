@@ -326,7 +326,7 @@ resource "helm_release" "tempo" {
         }
 
         # Habilita os processadores para todos os tenants (single-tenant setup)
-        global_overrides = {
+        overrides = {
           defaults = {
             metrics_generator = {
               processors = [

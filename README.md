@@ -19,12 +19,12 @@ A estrutura do ambiente tem algumas camadas princiais:
 ## Considerações
 
 - A stack de monitoração tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
-- O script de teste faz automaticamente:
+- O script de teste automaticamente:
     - Descobre o LoadBalancer do evaluation-service via `kubectl`
     - Abre port-forwards para os serviços internos (_`auth`, `flag`, `targeting`_)
     - Recupera a master key do AWS Secrets Manager
     - Cria 4 flags com percentuais diferentes (50%, 10%, 80%, 0%)
-    - Dispara 200 avaliações por padrão com user IDs e flag names variados
+    - Dispara 100 avaliações por padrão com user IDs e flag names variados
     - Gera requests inválidas para criar error spans
 - ⚠️ A implementaçao de APMs como Datadog ou New Relic não foi implementada nesta fase com as seguintes considerações:
     - **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico altamente invasivo. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
