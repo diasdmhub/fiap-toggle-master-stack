@@ -41,8 +41,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p50"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p50",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -60,8 +62,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p95"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p95",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -79,8 +83,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p99"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*flag-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p99",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -198,8 +204,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p50"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p50",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -217,8 +225,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p95"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p95",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -236,8 +246,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p99"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*targeting-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p99",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -669,8 +681,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"auth-service-.*\",container!=\"\"}[2m])) by (pod)",
-                      "legendFormat": "auth-service ({{pod}})"
+                      "editorMode": "code",
+                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"auth-service-.*\",container!=\"\"}[$__rate_interval])) by (pod)",
+                      "legendFormat": "auth-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -688,8 +702,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"flag-service-.*\",container!=\"\"}[2m])) by (pod)",
-                      "legendFormat": "flag-service ({{pod}})"
+                      "editorMode": "code",
+                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"flag-service-.*\",container!=\"\"}[$__rate_interval])) by (pod)",
+                      "legendFormat": "flag-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -707,8 +723,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"targeting-service-.*\",container!=\"\"}[2m])) by (pod)",
-                      "legendFormat": "targeting-service ({{pod}})"
+                      "editorMode": "code",
+                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"targeting-service-.*\",container!=\"\"}[$__rate_interval])) by (pod)",
+                      "legendFormat": "targeting-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -726,8 +744,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"evaluation-service-.*\",container!=\"\"}[2m])) by (pod)",
-                      "legendFormat": "evaluation-service ({{pod}})"
+                      "editorMode": "code",
+                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"evaluation-service-.*\",container!=\"\"}[$__rate_interval])) by (pod)",
+                      "legendFormat": "evaluation-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -745,8 +765,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"analytics-service-.*\",container!=\"\"}[2m])) by (pod)",
-                      "legendFormat": "analytics-service ({{pod}})"
+                      "editorMode": "code",
+                      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"toggle\",pod=~\"analytics-service-.*\",container!=\"\"}[$__rate_interval])) by (pod)",
+                      "legendFormat": "analytics-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -864,8 +886,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
+                      "editorMode": "code",
                       "expr": "sum(container_memory_working_set_bytes{namespace=\"toggle\",pod=~\"auth-service-.*\",container!=\"\"}) by (pod)",
-                      "legendFormat": "auth-service ({{pod}})"
+                      "legendFormat": "auth-service ({{pod}})",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1646,8 +1670,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\"}[2m]))",
-                      "legendFormat": "auth-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "auth-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1665,8 +1691,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\"}[2m]))",
-                      "legendFormat": "flag-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "flag-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1684,8 +1712,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\"}[2m]))",
-                      "legendFormat": "targeting-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "targeting-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1703,8 +1733,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\"}[2m]))",
-                      "legendFormat": "evaluation-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "evaluation-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1722,8 +1754,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\"}[2m]))",
-                      "legendFormat": "analytics-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "analytics-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1843,8 +1877,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\",http_status_code=~\"5..\"}[2m])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\"}[2m]))",
-                      "legendFormat": "auth-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\",http_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*auth-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "auth-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1862,8 +1898,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\",http_status_code=~\"5..\"}[2m])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\"}[2m]))",
-                      "legendFormat": "flag-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\",http_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*flag-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "flag-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1881,8 +1919,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\",http_status_code=~\"5..\"}[2m])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\"}[2m]))",
-                      "legendFormat": "targeting-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\",http_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*targeting-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "targeting-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1900,8 +1940,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\",http_status_code=~\"5..\"}[2m])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\"}[2m]))",
-                      "legendFormat": "evaluation-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\",http_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*evaluation-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "evaluation-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1919,8 +1961,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\",http_status_code=~\"5..\"}[2m])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\"}[2m]))",
-                      "legendFormat": "analytics-service"
+                      "editorMode": "code",
+                      "expr": "sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\",http_status_code=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_duration_milliseconds_count{job=~\".*analytics-service.*\"}[$__rate_interval]))",
+                      "legendFormat": "analytics-service",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -2044,8 +2088,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p50"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.50, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p50",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -2063,8 +2109,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p95"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p95",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -2082,8 +2130,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[2m])) by (le))",
-                      "legendFormat": "p99"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.99, sum(rate(http_server_duration_milliseconds_bucket{job=~\".*auth-service.*\"}[$__rate_interval])) by (le))",
+                      "legendFormat": "p99",
+                      "range": true
                     },
                     "version": "v0"
                   },

@@ -113,7 +113,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sort_desc(sum by (client, server) (rate(traces_service_graph_request_total[5m])))",
+                      "editorMode": "code",
+                      "expr": "sort_desc(sum by (client, server) (rate(traces_service_graph_request_total[$__rate_interval])))",
                       "format": "table",
                       "instant": true,
                       "legendFormat": ""
@@ -871,8 +872,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum by (client, server) (rate(traces_service_graph_request_failed_total[5m])) / sum by (client, server) (rate(traces_service_graph_request_total[5m]))",
-                      "legendFormat": "{{client}} → {{server}}"
+                      "editorMode": "code",
+                      "expr": "sum by (client, server) (rate(traces_service_graph_request_failed_total[$__rate_interval])) / sum by (client, server) (rate(traces_service_graph_request_total[$__rate_interval]))",
+                      "legendFormat": "{{client}} → {{server}}",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -990,8 +993,10 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "histogram_quantile(0.95, sum by (client, server, le) (rate(traces_service_graph_request_server_seconds_bucket[5m])))",
-                      "legendFormat": "{{client}} → {{server}}"
+                      "editorMode": "code",
+                      "expr": "histogram_quantile(0.95, sum by (client, server, le) (rate(traces_service_graph_request_server_seconds_bucket[$__rate_interval])))",
+                      "legendFormat": "{{client}} → {{server}}",
+                      "range": true
                     },
                     "version": "v0"
                   },
@@ -1109,7 +1114,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "topk(20, histogram_quantile(0.95, sum by (service_name, span_name, le) (rate(traces_spanmetrics_duration_seconds_bucket[5m]))))",
+                      "editorMode": "code",
+                      "expr": "topk(20, histogram_quantile(0.95, sum by (service_name, span_name, le) (rate(traces_spanmetrics_duration_seconds_bucket[$__rate_interval]))))",
                       "format": "table",
                       "instant": true,
                       "legendFormat": ""
@@ -1130,7 +1136,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum by (service_name, span_name) (rate(traces_spanmetrics_calls_total[5m]))",
+                      "editorMode": "code",
+                      "expr": "sum by (service_name, span_name) (rate(traces_spanmetrics_calls_total[$__rate_interval]))",
                       "format": "table",
                       "instant": true,
                       "legendFormat": ""
@@ -1151,7 +1158,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "expr": "sum by (service_name, span_name) (rate(traces_spanmetrics_calls_total{status_code=\"STATUS_CODE_ERROR\"}[5m]))",
+                      "editorMode": "code",
+                      "expr": "sum by (service_name, span_name) (rate(traces_spanmetrics_calls_total{status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval]))",
                       "format": "table",
                       "instant": true,
                       "legendFormat": ""
@@ -1382,7 +1390,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -1435,7 +1443,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -1475,7 +1483,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": false,
+            "collapse": true,
             "layout": {
               "kind": "GridLayout",
               "spec": {
