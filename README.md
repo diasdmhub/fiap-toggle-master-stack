@@ -26,7 +26,7 @@ A estrutura do ambiente tem algumas camadas princiais:
     - Cria 4 flags com percentuais diferentes (50%, 10%, 80%, 0%)
     - Dispara 200 avaliações por padrão com user IDs e flag names variados
     - Gera requests inválidas para criar error spans
-- ⚠️ A implementaçao de APMs como Datadog ou New Relic é desconsiderada nesta fase com as seguintes considerações:
+- ⚠️ A implementaçao de APMs como Datadog ou New Relic não foi implementada nesta fase com as seguintes considerações:
     - **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico altamente invasivo. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
     - **New Relic**: o portal tem recusado conexões (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar esse serviço.
     - **Portanto**, entendo que estas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Elas não trazem benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o **Grafana Tempo** é utilizado no projeto, pois ele já é integrado ao Grafana, não possui custos e é open-source.
