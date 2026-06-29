@@ -2310,7 +2310,7 @@
         {
           "kind": "RowsLayoutRow",
           "spec": {
-            "collapse": true,
+            "collapse": false,
             "layout": {
               "kind": "GridLayout",
               "spec": {
@@ -2484,6 +2484,6 @@
     "timezone": "browser",
     "to": "now"
   },
-  "title": "ToggleMaster - Observabilidade OTel",
+  "title": "ToggleMaster - Observabilidade",
   "variables": []
 }
