@@ -66,8 +66,8 @@ info "Abrindo port-forwards para serviços internos..."
 kubectl port-forward svc/auth      -n toggle 8001:8001 &>/dev/null &
 kubectl port-forward svc/flag      -n toggle 8002:8002 &>/dev/null &
 kubectl port-forward svc/targeting -n toggle 8003:8003 &>/dev/null &
-INTERNAL_PF_PIDS="$!"
-trap "kill $(jobs -p) 2>/dev/null || true" EXIT
+#INTERNAL_PF_PIDS="$!"
+trap 'kill $(jobs -p) 2>/dev/null || true' EXIT
 sleep 4
 
 # =============================================================================
