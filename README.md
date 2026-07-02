@@ -2,9 +2,9 @@
 
 > Análise geral e implementação comentada do "desafio" da Fase 4 do curso DevOps e Arquitetura Cloud da FIAP.
 
-Nesta fase, o projeto propõe a monitoração de todo infraestrutura e dos microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]).
-
 A ToggleMaster é uma solução que permite ativar ou desativar _features_ em produção sem a necessidade de um novo _deploy_. Ela foi criada para que times de desenvolvimento possam lançar novas funcionalidades de forma segura e controlada.
+
+Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]). São incluídos recursos de monitoração e observabilidade e um modelo padronizado com o OpenTelemetry. Os microserviços foram padronizados de modo a permitir uma "visibilidade profunda", disponibilizando traces e spans para consulta. Assim, todo o conjunto é monitorado e observado com profundidade, além de integrado a ferramentas de monitoração, alerta e gerenciamento de incidentes.
 
 <BR>
 
@@ -24,11 +24,11 @@ Com o ambiente AWS criado, os microsserviços, então, são executados em um clu
 
 A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 
-- **Terraform** - Provisiona toda a infraestrutura: VPC, EKS, RDS, Valkey, SQS, stack de monitoramento e políticas IAM.
+- **Terraform** - Provisiona toda a infraestrutura: VPC, EKS, RDS, Valkey, SQS, Secrets, políticas IAM e stack de monitoramento.
 - **CI/CD** - O fluxo de GitOps se dá com o GitHub Actions que constrói as imagens, envia-as ao ECR utilizando o OIDC, e o ArgoCD busca os dados para a implementação no cluster Kubernetes.
 - **AWS EKS** - O cluster Kubernetes que foi dividido em dois namespaces principais:
-    - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag` e o `targeting` internamente, os quais buscam a autorização no `auth-service`.
-    - No `monitoring` o _OTel Collector_ é o ponto central onde todos os serviços enviam telemetria OTLP para ele, e ele roteia métricas ao Prometheus, logs ao Loki e traces ao Tempo. O Grafana consome dados deles para as dashboards.
+    - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag` e o `targeting` internamente, os quais buscam a autorização no `auth-service`. O `analytics` consome as mensagens do SQS.
+    - No **`monitoring`** o _OTel Collector_ é o ponto central onde todos os serviços enviam telemetria OTLP para ele, e ele roteia métricas ao Prometheus, logs ao Loki e traces ao Tempo. O Grafana consome dados deles para as dashboards.
 - **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`, o ElastiCache Valkey/Redis faz o cache do microserviço `evaluation`, o **SQS** recebe as publicações do `evaluation` e o `analytics` as consome. Por fim, o **Secrets Manager** gerencia as credenciais.
 
 <BR>
@@ -69,12 +69,12 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 - Abre port-forwards para os serviços internos (_`auth`, `flag`, `targeting`_)
 - Recupera a master key do AWS Secrets Manager
 - Cria 4 flags com percentuais diferentes (50%, 10%, 80%, 0%)
-- Dispara 100 avaliações por padrão com user IDs e flag names variados
+- Dispara 150 avaliações por padrão com user IDs e flag names variados
 - Gera requests inválidas para criar error spans
 
 🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic não foi implementada nesta fase com as seguintes considerações:
 
-- **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico altamente invasivo. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
+- **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico **altamente invasivo**. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
 - **New Relic**: o portal tem recusado conexões (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar esse serviço.
 - **Portanto**, entendo que estas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Elas não trazem benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o **Grafana Tempo** é utilizado no projeto, pois ele já é integrado ao Grafana, não possui custos e é open-source.
 
