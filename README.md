@@ -75,8 +75,8 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic não foi implementada nesta fase com as seguintes considerações:
 
 - **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico **altamente invasivo**. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
-- **New Relic**: o portal tem recusado conexões (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar esse serviço.
-- **Portanto**, entendo que estas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Elas não trazem benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o **Grafana Tempo** é utilizado no projeto, pois ele já é integrado ao Grafana, não possui custos e é open-source.
+- **New Relic**: o [portal tem recusado conexões][newrelic] (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar os recursos desse serviço.
+- **Portanto**, entendo que estas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Elas não trazem benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o _trace_ dos serviços, pois ele já é integrado ao Grafana e ao OpenTelemetry, não possui custos e é open-source.
 
 [fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [authserv]: https://github.com/FIAP-TCs/auth-service
@@ -84,9 +84,11 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 [targetserv]: https://github.com/FIAP-TCs/targeting-service
 [evalserv]: https://github.com/FIAP-TCs/evaluation-service
 [analyticserv]: https://github.com/FIAP-TCs/analytics-service
-[awscli]: https://aws.amazon.com/cli/
+[awscli]: https://aws.amazon.com/cli
 [terraform]: https://developer.hashicorp.com/terraform/install
-[kuberepo]: https://kubernetes.io/docs/tasks/tools/
-[argocdcli]: https://argo-cd.readthedocs.io/en/stable/cli_installation/
-[datadog_edu]: https://studentpack.datadoghq.com/
+[kuberepo]: https://kubernetes.io/docs/tasks/tools
+[argocdcli]: https://argo-cd.readthedocs.io/en/stable/cli_installation
+[datadog_edu]: https://studentpack.datadoghq.com
 [github_edu]: https://education.github.com/pack
+[newrelic]: https://newrelic.com
+[grafanatempo]: https://grafana.com/oss/tempo

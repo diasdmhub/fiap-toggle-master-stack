@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# test-traffic.sh - Gerador de tráfego sintético realista para o ToggleMaster
+# test-traffic.sh — Gerador de tráfego sintético realista para o ToggleMaster
 #
 # Gera requisições válidas, erros controlados (400/401/404), flags inexistentes
 # e tokens inválidos. Suporta paralelismo e latências variadas para simular
@@ -83,8 +83,15 @@ info "evaluation-service saudável ✓"
 # ─── 2. Port-forwards para serviços internos ──────────────────────────────────
 section "2. Abrindo port-forwards para serviços internos"
 kubectl port-forward svc/auth      -n toggle 8001:8001 &>/dev/null &
+PF_AUTH=$!
 kubectl port-forward svc/flag      -n toggle 8002:8002 &>/dev/null &
+PF_FLAG=$!
 kubectl port-forward svc/targeting -n toggle 8003:8003 &>/dev/null &
+PF_TGT=$!
+# Guarda os PIDs dos port-forwards para encerrá-los no EXIT,
+# mas sem incluí-los no wait final (eles nunca terminam sozinhos).
+PF_PIDS="$PF_AUTH $PF_FLAG $PF_TGT"
+trap "kill $PF_PIDS 2>/dev/null || true; rm -f '$RESULTS_FILE'" EXIT
 sleep 4
 info "port-forwards ativos (auth:8001, flag:8002, targeting:8003)"
 
@@ -243,19 +250,22 @@ export ERROR_SCENARIOS_STR="${ERROR_SCENARIOS[*]}"
 section "5. Gerando $REQUESTS requisições (concorrência=$CONCURRENCY, erros≈${ERROR_RATE}%)"
 echo ""
 
-ACTIVE=0
+# Guarda apenas os PIDs dos workers (não os dos port-forwards)
+WORKER_PIDS=()
+
 for i in $(seq 1 "$REQUESTS"); do
   # Exporta o array de cenários no contexto do subshell
   (
     ERROR_SCENARIOS=($ERROR_SCENARIOS_STR)
     run_one "$i"
   ) &
-  ACTIVE=$((ACTIVE + 1))
+  WORKER_PIDS+=($!)
 
-  # Limita o número de jobs paralelos ao --concurrency
-  if (( ACTIVE >= CONCURRENCY )); then
-    wait -n 2>/dev/null || wait   # wait -n requer bash 4.3+; fallback para wait
-    ACTIVE=$((ACTIVE - 1))
+  # Limita o número de jobs paralelos ao --concurrency:
+  # aguarda apenas o worker mais antigo (primeiro da fila), não os port-forwards
+  if (( ${#WORKER_PIDS[@]} >= CONCURRENCY )); then
+    wait "${WORKER_PIDS[0]}" 2>/dev/null || true
+    WORKER_PIDS=("${WORKER_PIDS[@]:1}")   # remove o primeiro (já concluído)
   fi
 
   # Progresso a cada 10 requisições
@@ -267,8 +277,10 @@ for i in $(seq 1 "$REQUESTS"); do
   fi
 done
 
-# Aguarda todos os workers terminarem
-wait
+# Aguarda apenas os workers ainda ativos (ignora port-forwards)
+if (( ${#WORKER_PIDS[@]} > 0 )); then
+  wait "${WORKER_PIDS[@]}" 2>/dev/null || true
+fi
 echo ""
 
 # ─── 8. Relatório final ───────────────────────────────────────────────────────
@@ -304,7 +316,7 @@ echo "  └───────────────────────
 
 echo ""
 echo "  No Grafana:"
-echo "  → APM › Service Map      - nós coloridos por taxa de erros"
-echo "  → APM › Red por serviço  - pico de erros visível nos gráficos"
-echo "  → Explore › Tempo        - { status = error } para ver error spans"
-echo "  → Explore › Loki         - {namespace=\"toggle\"} | logfmt | level = \"error\""
+echo "  → APM › Service Map      — nós coloridos por taxa de erros"
+echo "  → APM › Red por serviço  — pico de erros visível nos gráficos"
+echo "  → Explore › Tempo        — { status = error } para ver error spans"
+echo "  → Explore › Loki         — {namespace=\"toggle\"} | logfmt | level = \"error\""
