@@ -55,7 +55,7 @@ jitter_sleep() {
   if   (( r < 50 )); then sleep 0.05           # 50% → rajada rápida
   elif (( r < 75 )); then sleep 0.15           # 25% → ritmo normal
   elif (( r < 90 )); then sleep 0.30           # 15% → cliente moderado
-  else                    sleep $(( (RANDOM % 11 + 5) ))$(( RANDOM % 10 ))  # 10% → cliente lento (0.5–1.5s aprox)
+  else                    sleep "0.$(( RANDOM % 6 + 5 ))"  # 10% → cliente lento (0.5–1.0s)
   fi
 }
 
@@ -76,7 +76,7 @@ fi
 EVAL_BASE="http://${EVAL_URL}:8004"
 info "Endpoint: $EVAL_BASE"
 
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$EVAL_BASE/health" || echo "000")
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 "$EVAL_BASE/health" || echo "000")
 [[ "$HTTP_CODE" != "200" ]] && error "evaluation-service /health retornou HTTP $HTTP_CODE"
 info "evaluation-service saudável ✓"
 
@@ -141,7 +141,7 @@ create_flag "disabled-feature"  0
 # 5a. Tokens inválidos → 401 no auth-service
 req_invalid_token() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "${EVAL_BASE}/evaluate?user_id=hack-001&flag_name=${FLAG_NAME}" \
     -H "Authorization: Bearer invalid-token-$(( RANDOM % 9999 ))" || echo "000")
   echo "$code invalid_token" >> "$RESULTS_FILE"
@@ -150,7 +150,7 @@ req_invalid_token() {
 # 5b. Sem parâmetros obrigatórios → 400 no evaluation-service
 req_missing_params() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "${EVAL_BASE}/evaluate" || echo "000")
   echo "$code missing_params" >> "$RESULTS_FILE"
 }
@@ -158,7 +158,7 @@ req_missing_params() {
 # 5c. Apenas user_id → 400
 req_missing_flag() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "${EVAL_BASE}/evaluate?user_id=user-$(( RANDOM % 999 ))" || echo "000")
   echo "$code missing_flag_param" >> "$RESULTS_FILE"
 }
@@ -166,7 +166,7 @@ req_missing_flag() {
 # 5d. Flag inexistente → avaliação retorna false (não 404, mas sem regra)
 req_unknown_flag() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "${EVAL_BASE}/evaluate?user_id=user-$(( RANDOM % 999 ))&flag_name=flag-nao-existe-$(( RANDOM % 999 ))" \
     || echo "000")
   echo "$code unknown_flag" >> "$RESULTS_FILE"
@@ -175,7 +175,7 @@ req_unknown_flag() {
 # 5e. Recurso inexistente no flag-service → 404
 req_unknown_flag_crud() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "http://localhost:8002/flags/flag-inexistente-$(( RANDOM % 999 ))" \
     -H "Authorization: Bearer $FLAG_TOKEN" || echo "000")
   echo "$code flag_not_found_404" >> "$RESULTS_FILE"
@@ -184,7 +184,7 @@ req_unknown_flag_crud() {
 # 5f. Recurso inexistente no targeting-service → 404
 req_unknown_rule() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "http://localhost:8003/rules/regra-inexistente-$(( RANDOM % 999 ))" \
     -H "Authorization: Bearer $FLAG_TOKEN" || echo "000")
   echo "$code rule_not_found_404" >> "$RESULTS_FILE"
@@ -193,7 +193,7 @@ req_unknown_rule() {
 # 5g. Método HTTP errado → 405
 req_wrong_method() {
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 -X DELETE \
     "${EVAL_BASE}/evaluate?user_id=x&flag_name=${FLAG_NAME}" || echo "000")
   echo "$code wrong_method_405" >> "$RESULTS_FILE"
 }
@@ -206,7 +206,7 @@ req_valid() {
   local flags=("$FLAG_NAME" "dark-launch" "beta-feature" "disabled-feature")
   local fname="${flags[$((RANDOM % ${#flags[@]}))]}"
   local code
-  code=$(curl -s -o /dev/null -w "%{http_code}" \
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 --connect-timeout 3 \
     "${EVAL_BASE}/evaluate?user_id=${user_id}&flag_name=${fname}" \
     || echo "000")
   echo "$code valid_eval" >> "$RESULTS_FILE"
