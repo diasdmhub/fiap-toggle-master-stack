@@ -4,7 +4,7 @@
 
 A ToggleMaster é uma solução que permite ativar ou desativar _features_ em produção sem a necessidade de um novo _deploy_. Ela foi criada para que times de desenvolvimento possam lançar novas funcionalidades de forma segura e controlada.
 
-Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]). São incluídos recursos de monitoração e observabilidade e um modelo padronizado com o OpenTelemetry. Os microserviços foram padronizados de modo a permitir uma "visibilidade profunda", disponibilizando traces e spans para consulta. Assim, todo o conjunto é monitorado e observado com profundidade, além de integrado a ferramentas de monitoração, alerta e gerenciamento de incidentes.
+Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]). Para isso, são incluídos recursos de monitoração e observabilidade em um modelo padronizado com o OpenTelemetry. Os microserviços foram padronizados de modo a permitir uma "visibilidade profunda", disponibilizando traces e spans para consulta. Assim, todo o conjunto é monitorado e observado com profundidade, além de integrado a ferramentas de monitoração, alerta e gerenciamento de incidentes.
 
 <BR>
 
