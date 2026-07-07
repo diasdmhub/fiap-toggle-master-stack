@@ -4,7 +4,7 @@
 
 A ToggleMaster é uma solução que permite ativar ou desativar _features_ em produção sem a necessidade de um novo _deploy_. Ela foi criada para que times de desenvolvimento possam lançar novas funcionalidades de forma segura e controlada.
 
-Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]). Para isso, são incluídos recursos de monitoração e observabilidade em um modelo padronizado com o OpenTelemetry. Os microserviços foram padronizados de modo a permitir uma "visibilidade profunda", disponibilizando traces e spans para consulta. Assim, todo o conjunto é monitorado e observado com profundidade, além de integrado a ferramentas de monitoração, alerta e gerenciamento de incidentes.
+Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserviços do sistema ToggleMaster ([_o mesmo da Fase 3_][fase3]). Para isso, são incluídos recursos de monitoração e observabilidade em um modelo padronizado com o OpenTelemetry. Os microserviços foram padronizados de modo a permitir uma "visibilidade profunda", disponibilizando traces e spans para consulta. Assim, todo o conjunto é monitorado e observado com profundidade, além de integrado a ferramentas de monitoração, alerta e gerenciamento de incidentes. O projeto também inclui o _self-healing_ de serviços utilizando o AWS Lambda, sendo mais um módulo do Terraform.
 
 <BR>
 
@@ -30,6 +30,7 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
     - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag` e o `targeting` internamente, os quais buscam a autorização no `auth-service`. O `analytics` consome as mensagens do SQS.
     - No **`monitoring`** o _OTel Collector_ é o ponto central onde todos os serviços enviam telemetria OTLP para ele, e ele roteia métricas ao Prometheus, logs ao Loki e traces ao Tempo. O Grafana consome dados deles para as dashboards.
 - **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`, o ElastiCache Valkey/Redis faz o cache do microserviço `evaluation`, o **SQS** recebe as publicações do `evaluation` e o `analytics` as consome. Por fim, o **Secrets Manager** gerencia as credenciais.
+- **K8s Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, trazendo informações sobre o estado e saúde do ambiente.
 
 <BR>
 

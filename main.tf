@@ -150,5 +150,30 @@ module "mon" {
   otel_chart_version       = var.otel_chart_version
   tempo_chart_version      = var.tempo_chart_version
 
-  depends_on = [module.eks]
+  # Provisiona o contact point + regra de alerta do self-healing
+  selfheal_webhook_url      = module.selfheal.webhook_url
+  selfheal_webhook_username = var.selfheal_webhook_username
+  selfheal_webhook_password = var.selfheal_webhook_password
+  selfheal_target_deployments = var.selfheal_target_deployments
+
+  depends_on = [module.eks, module.selfheal]
+}
+
+module "selfheal" {
+  source = "./modules/selfheal"
+
+  name_prefix               = var.name_prefix
+  namespace                 = var.namespace
+  target_deployments        = var.selfheal_target_deployments
+  cluster_name              = module.eks.eks_cluster_name
+  cluster_endpoint          = module.eks.eks_cluster_endpoint
+  cluster_ca                = module.eks.eks_cluster_ca
+  cluster_security_group_id = module.eks.eks_cluster_security_group_id
+  vpc_id                    = module.vpc.vpc_id
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  webhook_username          = var.selfheal_webhook_username
+  webhook_password          = var.selfheal_webhook_password
+  cooldown_seconds          = var.selfheal_cooldown_seconds
+
+  depends_on = [module.eks, module.vpc]
 }

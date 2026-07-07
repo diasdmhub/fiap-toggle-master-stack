@@ -22,3 +22,8 @@ output "eks_oidc_provider_url" {
   description = "URL do OIDC provider do cluster EKS (sem https://)"
   value       = trimprefix(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://")
 }
+
+output "eks_cluster_security_group_id" {
+  description = "Security group gerenciado pelo EKS para o control plane do cluster"
+  value       = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+}
