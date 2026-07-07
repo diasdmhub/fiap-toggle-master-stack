@@ -150,3 +150,29 @@ variable "tempo_chart_version" {
   type        = string
   default     = ""
 }
+
+# Variáveis do Self-Healing (Lambda)
+#############################
+variable "selfheal_target_deployments" {
+  description = "Deployments que o Lambda de self-healing tem permissão de reiniciar"
+  type        = list(string)
+  default     = ["auth-service", "flag-service", "targeting-service", "evaluation-service"]
+}
+
+variable "selfheal_webhook_username" {
+  description = "Usuário HTTP Basic Auth do contact point webhook do Grafana (validado pelo Lambda)"
+  type        = string
+  default     = "grafana-selfheal"
+}
+
+variable "selfheal_webhook_password" {
+  description = "Senha HTTP Basic Auth do contact point webhook do Grafana (defina uma variável de ambiente)"
+  type        = string
+  sensitive   = true
+}
+
+variable "selfheal_cooldown_seconds" {
+  description = "Janela mínima entre dois restarts consecutivos do mesmo serviço"
+  type        = number
+  default     = 300
+}

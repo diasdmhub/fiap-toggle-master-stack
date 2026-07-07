@@ -19,6 +19,10 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.2"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
   }
 
 # backend remoto no S3 bucket da AWS

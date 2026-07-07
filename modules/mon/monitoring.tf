@@ -116,6 +116,84 @@ resource "helm_release" "prometheus_stack" {
           }
         }
 
+        # Provisiona o contact point webhook e a regra de alerta usadas
+        # pela automação de self-healing (Lambda). A notification policy
+        # que liga essa regra ao contact point (junto do PagerDuty) é
+        # configurada manualmente, para não sobrescrever a política já
+        # existente (ver roteiro).
+        alerting = {
+          "contactpoints.yaml" = {
+            apiVersion = 1
+            contactPoints = [{
+              orgId = 1
+              name  = "selfheal-webhook"
+              receivers = [{
+                uid  = "selfheal-webhook-1"
+                type = "webhook"
+                settings = {
+                  url        = var.selfheal_webhook_url
+                  httpMethod = "POST"
+                  username   = var.selfheal_webhook_username
+                }
+                secureSettings = {
+                  password = var.selfheal_webhook_password
+                }
+              }]
+            }]
+          }
+
+          "rules.yaml" = {
+            apiVersion = 1
+            groups = [{
+              orgId    = 1
+              name     = "selfheal"
+              folder   = "ToggleMaster"
+              interval = "1m"
+              rules = [{
+                uid   = "selfheal-service-down"
+                title = "Deployment sem réplicas disponíveis"
+
+                data = [
+                  {
+                    refId = "A"
+                    relativeTimeRange = { from = 300, to = 0 }
+                    datasourceUid = "prometheus"
+                    model = {
+                      refId   = "A"
+                      instant = true
+                      expr    = "kube_deployment_status_replicas_available{namespace=\"${var.namespace}\", deployment=~\"${join("|", var.selfheal_target_deployments)}\"}"
+                    }
+                  },
+                  {
+                    refId = "C"
+                    datasourceUid = "__expr__"
+                    model = {
+                      refId      = "C"
+                      type       = "threshold"
+                      expression = "A"
+                      conditions = [{
+                        evaluator = { type = "lt", params = [1] }
+                      }]
+                    }
+                  }
+                ]
+
+                condition    = "C"
+                for          = "2m"
+                noDataState  = "OK"
+                execErrState = "Error"
+
+                labels = {
+                  team = "toggle-master"
+                }
+                annotations = {
+                  summary = "O Deployment {{ $labels.deployment }} está com 0 réplicas disponíveis há mais de 2 minutos"
+                }
+              }]
+            }]
+          }
+        }
+
         service = { type = var.grafana_service_type }
 
         persistence = { enabled = false }

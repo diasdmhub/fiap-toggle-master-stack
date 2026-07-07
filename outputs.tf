@@ -69,3 +69,8 @@ output "monitoring_outputs" {
   value       = module.mon
   description = "Outputs do módulo Monitoring Stack"
 }
+
+output "selfheal_outputs" {
+  value       = module.selfheal
+  description = "Outputs do módulo Self-Healing (Lambda + API Gateway)"
+}
