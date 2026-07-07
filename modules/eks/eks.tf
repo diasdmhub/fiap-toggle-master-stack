@@ -75,6 +75,12 @@ resource "aws_eks_cluster" "main" {
     subnet_ids = var.private_subnet_ids
   }
 
+  # Habilita a API de Access Entries mantendo compatibilidade
+  # com o aws-auth ConfigMap legado.
+  access_config {
+    authentication_mode = "API_AND_CONFIG_MAP"
+  }
+
   tags = {
     Name = "${var.name_prefix}-eks-cluster"
   }
