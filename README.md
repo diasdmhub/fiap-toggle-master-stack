@@ -30,7 +30,8 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
     - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag` e o `targeting` internamente, os quais buscam a autorização no `auth-service`. O `analytics` consome as mensagens do SQS.
     - No **`monitoring`** o _OTel Collector_ é o ponto central onde todos os serviços enviam telemetria OTLP para ele, e ele roteia métricas ao Prometheus, logs ao Loki e traces ao Tempo. O Grafana consome dados deles para as dashboards.
 - **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`, o ElastiCache Valkey/Redis faz o cache do microserviço `evaluation`, o **SQS** recebe as publicações do `evaluation` e o `analytics` as consome. Por fim, o **Secrets Manager** gerencia as credenciais.
-- **K8s Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, trazendo informações sobre o estado e saúde do ambiente.
+- **K8s OTel/Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, trazendo informações sobre o estado e saúde do ambiente.
+- **AWS Lambda** - É utilizado para a automação de _self-healing_ dos microserviços.
 
 <BR>
 
@@ -54,7 +55,7 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 
 ---
 
-### [↗️ Roteiro de implementação](/roteiro/)
+### [↗️ Roteiro de implementação do ambiente](/roteiro/)
 
 ---
 
@@ -62,15 +63,15 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 
 ## Considerações
 
-🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic não foi implementada nesta fase com as seguintes considerações:
+🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic **não foi utilizada** nesta fase com as seguintes considerações:
 
 - **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico **altamente invasivo**. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
 - **New Relic**: o [portal tem recusado conexões][newrelic] (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar os recursos desse serviço.
-- **Portanto**, entendo que estas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Elas não trazem benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o _trace_ dos serviços, pois ele já é integrado ao Grafana e ao OpenTelemetry, não possui custos e é open-source.
+- **Portanto**, entendo que essas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Não foram percebidos benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o _trace_ dos serviços, pois ele faz parte do ambiente Grafana sendo é compatível com o OpenTelemetry, também não possui custos e é open-source.
 
-🔶 A stack de monitoração tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
+🔶 A **_stack_ de monitoração** tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
 
-🔶 O [script de teste][scriptest] automaticamente:
+🔶 O [**script de teste** (`test-traffic.sh`)][scriptest] realiza automaticamente:
 
 - Descobre o LoadBalancer do evaluation-service via `kubectl`
 - Abre port-forwards para os serviços internos (_`auth`, `flag`, `targeting`_)
@@ -78,6 +79,8 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 - Cria 4 flags com percentuais diferentes (50%, 10%, 80%, 0%)
 - Dispara 150 avaliações por padrão com user IDs e flag names variados
 - Gera requests inválidas para criar error spans
+
+🔶 O ambiente utiliza o **AWS Lambda** para automatizar o _self-healing_ dos microserviços e foi escolhido por estar no próprio ambiente da AWS e ter maior integração com os demais recursos. O Lambda também é compatível com o Terraform e, portanto, também é um módulo adicional.
 
 [fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [authserv]: https://github.com/FIAP-TCs/auth-service
