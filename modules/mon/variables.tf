@@ -18,6 +18,12 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "namespace" {
+  description = "Namespace Kubernetes onde os microserviços do ToggleMaster rodam"
+  type        = string
+  default     = "toggle"
+}
+
 variable "prometheus_chart_version" {
   description = "Versão do Helm chart kube-prometheus-stack (vazio para latest)"
   type        = string

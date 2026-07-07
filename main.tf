@@ -141,6 +141,7 @@ module "mon" {
   cluster_endpoint     = module.eks.eks_cluster_endpoint
   cluster_ca           = module.eks.eks_cluster_ca
   cluster_name         = module.eks.eks_cluster_name
+  namespace            = var.namespace
   grafana_pass         = var.grafana_pass
   grafana_service_type = var.grafana_service_type
 
