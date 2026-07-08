@@ -27,7 +27,7 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 - **Terraform** - Provisiona toda a infraestrutura: VPC, EKS, RDS, Valkey, SQS, Secrets, políticas IAM e stack de monitoramento.
 - **CI/CD** - O fluxo de GitOps se dá com o GitHub Actions que constrói as imagens, envia-as ao ECR utilizando o OIDC, e o ArgoCD busca os dados para a implementação no cluster Kubernetes.
 - **AWS EKS** - O cluster Kubernetes que foi dividido em dois namespaces principais:
-    - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag` e o `targeting` internamente, os quais buscam a autorização no `auth-service`. O `analytics` consome as mensagens do SQS.
+    - No **`toggle`** ficam os cinco microserviços com suas próprias responsabilidades. O `evaluation-service` chama o `flag-service` e o `targeting-service` internamente, os quais buscam a autorização no `auth-service`. O `analytics-service` consome as mensagens do SQS.
     - No **`monitoring`** o _OTel Collector_ é o ponto central onde todos os serviços enviam telemetria OTLP para ele, e ele roteia métricas ao Prometheus, logs ao Loki e traces ao Tempo. O Grafana consome dados deles para as dashboards.
 - **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`, o ElastiCache Valkey/Redis faz o cache do microserviço `evaluation`, o **SQS** recebe as publicações do `evaluation` e o `analytics` as consome. Por fim, o **Secrets Manager** gerencia as credenciais.
 - **K8s OTel/Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, trazendo informações sobre o estado e saúde do ambiente.
