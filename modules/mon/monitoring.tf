@@ -187,7 +187,7 @@ resource "helm_release" "prometheus_stack" {
                   team = "toggle-master"
                 }
                 annotations = {
-                  summary = "O Deployment {{ $labels.deployment }} está com 0 réplicas disponíveis há mais de 2 minutos"
+                  summary = "O Deployment {{`{{`}} $labels.deployment {{`}}`}} está com 0 réplicas disponíveis há mais de 2 minutos"
                 }
               }]
             }]
