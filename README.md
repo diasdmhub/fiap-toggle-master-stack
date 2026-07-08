@@ -8,7 +8,7 @@ Nesta fase, o projeto propõe a monitoração de todo infraestrutura e microserv
 
 <BR>
 
-## Ambiente
+## 🌐 Ambiente
 
 O projeto da ToggleMaster com IaaS é composto por alguns recursos principais: os **microserviços**, a **infraestrutura _cloud_** e os **módulos do Kubernetes**. Esses recursos são integrados por meio de algumas ferramentas que também são descritas mais adiante.
 
@@ -57,11 +57,13 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 
 ### [↗️ Roteiro de implementação do ambiente](/roteiro/)
 
+### [↗️ Teste dos serviços](/roteiro/teste.md)
+
 ---
 
 <BR>
 
-## Considerações
+## 📝 Considerações
 
 🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic **não foi utilizada** nesta fase com as seguintes considerações:
 
@@ -70,15 +72,6 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 - **Portanto**, entendo que essas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Não foram percebidos benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o _trace_ dos serviços, pois ele faz parte do ambiente Grafana sendo é compatível com o OpenTelemetry, também não possui custos e é open-source.
 
 🔶 A **_stack_ de monitoração** tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
-
-🔶 O [**script de teste** (`test-traffic.sh`)][scriptest] realiza automaticamente:
-
-- Descobre o LoadBalancer do evaluation-service via `kubectl`
-- Abre port-forwards para os serviços internos (_`auth`, `flag`, `targeting`_)
-- Recupera a master key do AWS Secrets Manager
-- Cria 4 flags com percentuais diferentes (50%, 10%, 80%, 0%)
-- Dispara 150 avaliações por padrão com user IDs e flag names variados
-- Gera requests inválidas para criar error spans
 
 🔶 O ambiente utiliza o **AWS Lambda** para automatizar o _self-healing_ dos microserviços e foi escolhido por estar no próprio ambiente da AWS e ter maior integração com os demais recursos. O Lambda também é compatível com o Terraform e, portanto, também é um módulo adicional.
 
@@ -96,4 +89,3 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 [github_edu]: https://education.github.com/pack
 [newrelic]: https://newrelic.com
 [grafanatempo]: https://grafana.com/oss/tempo
-[scriptest]: ./test-traffic.sh

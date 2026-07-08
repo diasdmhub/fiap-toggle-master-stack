@@ -1,3 +1,6 @@
+| [↩️ Voltar](./) |
+| --- |
+
 # 🛠️ Roteiro de Implementação
 
 Para a implementação, similar à [fase 3 do projeto][fase3], é necessário configurar alguns dados para permitir que o ambiente seja criado de forma consistente e de acordo com suas características.
@@ -54,7 +57,7 @@ terraform apply
 > A criação dos recursos pode levar alguns minutos, principalmente por causa do cluster EKS e seus _nodes_. Ao final, será apresentada uma mensagem indicando o término da implementação, seguida dos _outputs_ gerados. Algo similar à mensagem a seguir.
 > 
 > ```
-> Apply complete! Resources: 77 added, 0 changed, 0 destroyed.
+> Apply complete! Resources: 103 added, 0 changed, 0 destroyed.
 > ```
 
 <BR>
@@ -250,6 +253,9 @@ for i in $(seq 1000); do { curl "http://abc614f-123.us-east-1.elb.amazonaws.com:
 ```
 
 > ⚠️ **Esse comando envia muitas mensagens ao ToggleMaster, portanto pode levar um tempo, pois o serviço precisa se comunicar com a AWS. Se preferir, basta reduzir o número de mensagens enviadas para acelerar o processo.**
+
+| [⬆️ Top](#%EF%B8%8F-roteiro-de-implementa%C3%A7%C3%A3o) |
+| --- |
 
 [fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [init]: /init.sh
