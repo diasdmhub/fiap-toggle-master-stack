@@ -119,15 +119,28 @@ info "API key criada ✓"
 section "4. Criando feature flags e regras de segmentação"
 create_flag() {
   local name="$1" pct="$2"
-  curl -sf -X POST http://localhost:8002/flags \
+
+  local flag_code rule_code
+  flag_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8002/flags \
     -H "Content-Type: application/json" -H "Authorization: Bearer $FLAG_TOKEN" \
-    -d "{\"name\":\"$name\",\"description\":\"Teste: $name\",\"is_enabled\":true}" \
-    >/dev/null || true
-  curl -sf -X POST http://localhost:8003/rules \
+    -d "{\"name\":\"$name\",\"description\":\"Teste: $name\",\"is_enabled\":true}")
+
+  rule_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8003/rules \
     -H "Content-Type: application/json" -H "Authorization: Bearer $FLAG_TOKEN" \
-    -d "{\"flag_name\":\"$name\",\"is_enabled\":true,\"rules\":{\"type\":\"PERCENTAGE\",\"value\":$pct}}" \
-    >/dev/null || true
-  info "  flag '$name' (${pct}%) ✓"
+    -d "{\"flag_name\":\"$name\",\"is_enabled\":true,\"rules\":{\"type\":\"PERCENTAGE\",\"value\":$pct}}")
+
+  # 200/201 = criado agora; 409 = já existia de uma execução anterior (esperado
+  # e idempotente, não é erro). Qualquer outro código é um problema de verdade.
+  case "$flag_code" in
+    200|201) info "  flag '$name' (${pct}%) criada ✓" ;;
+    409)     info "  flag '$name' (${pct}%) já existia, reutilizando ✓" ;;
+    *)       warn "  flag '$name': POST /flags retornou HTTP $flag_code (inesperado)" ;;
+  esac
+
+  case "$rule_code" in
+    200|201|409) : ;; # regra já reportada junto da flag acima, nada a fazer
+    *)           warn "  regra para '$name': POST /rules retornou HTTP $rule_code (inesperado)" ;;
+  esac
 }
 create_flag "$FLAG_NAME"       50
 create_flag "dark-launch"      10
