@@ -14,6 +14,7 @@ padrão do Python. Nenhuma dependência externa/layer é necessária.
 import base64
 import hmac
 import json
+import logging
 import os
 import ssl
 import time
@@ -23,6 +24,9 @@ import urllib.error
 import boto3
 import botocore.session
 from botocore.signers import RequestSigner
+
+logger = logging.getLogger()
+logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 # ---------------------------------------------------------------------------
 # Configuração via variáveis de ambiente (definidas no Terraform)
@@ -105,8 +109,10 @@ def _check_and_set_cooldown(deployment_name: str) -> bool:
             ConditionExpression="attribute_not_exists(service_name) OR last_restart < :cutoff",
             ExpressionAttributeValues={":cutoff": now - COOLDOWN_SECONDS},
         )
+        logger.info("Cooldown OK para '%s', prosseguindo com o restart", deployment_name)
         return True
     except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        logger.info("'%s' em cooldown (restart recente), pulando", deployment_name)
         return False
 
 
@@ -137,6 +143,8 @@ def _restart_deployment(deployment_name: str):
 
     url = f"{CLUSTER_ENDPOINT}/apis/apps/v1/namespaces/{NAMESPACE}/deployments/{deployment_name}"
 
+    logger.info("Enviando PATCH para %s", url)
+
     request = urllib.request.Request(
         url,
         data=patch_body,
@@ -151,6 +159,7 @@ def _restart_deployment(deployment_name: str):
     ssl_context = ssl.create_default_context(cafile=ca_path)
 
     with urllib.request.urlopen(request, context=ssl_context, timeout=10) as response:
+        logger.info("PATCH em '%s' retornou HTTP %s", deployment_name, response.status)
         return response.status, response.read().decode("utf-8")
 
 
@@ -162,17 +171,28 @@ def _valid_basic_auth(headers: dict) -> bool:
     """
     auth_header = headers.get("authorization", "")
     if not auth_header.startswith("Basic "):
+        logger.warning(
+            "Auth rejeitada: header 'Authorization' ausente ou sem esquema "
+            "Basic. Headers recebidos: %s",
+            sorted(headers.keys()),
+        )
         return False
 
     try:
         decoded = base64.b64decode(auth_header[len("Basic "):]).decode("utf-8")
         username, _, password = decoded.partition(":")
     except (ValueError, UnicodeDecodeError):
+        logger.warning("Auth rejeitada: não foi possível decodificar o header Basic Auth")
         return False
 
     # Comparação em tempo constante para evitar timing attack
     user_ok = hmac.compare_digest(username, WEBHOOK_USERNAME)
     pass_ok = hmac.compare_digest(password, WEBHOOK_PASSWORD)
+    if not (user_ok and pass_ok):
+        logger.warning(
+            "Auth rejeitada: credenciais não conferem (username_ok=%s, password_ok=%s)",
+            user_ok, pass_ok,
+        )
     return user_ok and pass_ok
 
 
@@ -182,6 +202,8 @@ def lambda_handler(event, context):
     if not _valid_basic_auth(headers):
         return {"statusCode": 401, "body": json.dumps({"error": "unauthorized"})}
 
+    logger.info("Auth OK. Payload recebido: %s", event.get("body"))
+
     try:
         body = json.loads(event.get("body") or "{}")
     except json.JSONDecodeError:
@@ -189,16 +211,22 @@ def lambda_handler(event, context):
 
     # Payload padrão do Grafana unified alerting webhook: lista de "alerts"
     alerts = body.get("alerts", [])
+    logger.info("Processando %d alerta(s)", len(alerts))
     results = []
 
     for alert in alerts:
         if alert.get("status") != "firing":
+            logger.info("Ignorando alerta com status '%s' (não é 'firing')", alert.get("status"))
             continue
 
         labels = alert.get("labels", {})
         deployment_name = labels.get("deployment")
 
         if not deployment_name or deployment_name not in ALLOWED_DEPLOYMENTS:
+            logger.warning(
+                "Deployment '%s' não está na allowlist %s, pulando",
+                deployment_name, sorted(ALLOWED_DEPLOYMENTS),
+            )
             results.append({"deployment": deployment_name, "action": "skipped_not_allowed"})
             continue
 
@@ -208,12 +236,16 @@ def lambda_handler(event, context):
 
         try:
             status, _ = _restart_deployment(deployment_name)
+            logger.info("'%s' reiniciado com sucesso (HTTP %s)", deployment_name, status)
             results.append({"deployment": deployment_name, "action": "restarted", "k8s_status": status})
         except urllib.error.HTTPError as e:
+            error_detail = f"{e.code} {e.read().decode('utf-8', 'ignore')}"
+            logger.error("Falha ao reiniciar '%s': %s", deployment_name, error_detail)
             results.append({
                 "deployment": deployment_name,
                 "action": "error",
-                "detail": f"{e.code} {e.read().decode('utf-8', 'ignore')}",
+                "detail": error_detail,
             })
 
+    logger.info("Resultado final: %s", results)
     return {"statusCode": 200, "body": json.dumps({"results": results})}
