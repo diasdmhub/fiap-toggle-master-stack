@@ -129,11 +129,11 @@ create_flag() {
     -H "Content-Type: application/json" -H "Authorization: Bearer $FLAG_TOKEN" \
     -d "{\"flag_name\":\"$name\",\"is_enabled\":true,\"rules\":{\"type\":\"PERCENTAGE\",\"value\":$pct}}")
 
-  # 200/201 = criado agora; 409 = já existia de uma execução anterior (esperado
+  # 200/201 = criado agora; 409 = já existe de uma execução anterior (esperado
   # e idempotente, não é erro). Qualquer outro código é um problema de verdade.
   case "$flag_code" in
     200|201) info "  flag '$name' (${pct}%) criada ✓" ;;
-    409)     info "  flag '$name' (${pct}%) já existia, reutilizando ✓" ;;
+    409)     info "  flag '$name' (${pct}%) já existe, reutilizando ✓" ;;
     *)       warn "  flag '$name': POST /flags retornou HTTP $flag_code (inesperado)" ;;
   esac
 

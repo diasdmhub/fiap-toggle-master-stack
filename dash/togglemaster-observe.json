@@ -1289,7 +1289,9 @@
                 "multiLane": false
               },
               "legend": {
-                "calcs": [],
+                "calcs": [
+                  "lastNotNull"
+                ],
                 "displayMode": "table",
                 "enableFacetedFilter": false,
                 "overflow": "ellipsis",
@@ -2255,7 +2257,9 @@
                 "multiLane": false
               },
               "legend": {
-                "calcs": [],
+                "calcs": [
+                  "lastNotNull"
+                ],
                 "displayMode": "table",
                 "enableFacetedFilter": false,
                 "overflow": "ellipsis",
