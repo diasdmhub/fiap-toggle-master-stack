@@ -403,6 +403,42 @@ resource "helm_release" "tempo" {
           remoteWriteUrl = "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         }
 
+        # Configuração fina dos processors do metrics-generator. Diferente de
+        # "overrides" (que só liga/desliga processors por tenant), isto é
+        # repassado quase literalmente para o bloco `metrics_generator:` do
+        # tempo.yaml.
+        metrics_generator = {
+          processor = {
+            service_graphs = {
+              # Exclui /health só da geração do service-graph. Os traces
+              # continuam sendo armazenados e buscáveis normalmente no
+              # Tempo - só não viram aresta/nó no grafo de serviços.
+              # (Requer Tempo >= 3.0, quando o service_graphs passou a
+              # suportar os mesmos filter_policies do span_metrics.)
+              filter_policies = [
+                {
+                  exclude = {
+                    match_type = "strict"
+                    attributes = [{ key = "span.http.target", value = "/health" }]
+                  }
+                },
+                {
+                  exclude = {
+                    match_type = "strict"
+                    attributes = [{ key = "span.http.route", value = "/health" }]
+                  }
+                },
+                {
+                  exclude = {
+                    match_type = "strict"
+                    attributes = [{ key = "span.url.path", value = "/health" }]
+                  }
+                },
+              ]
+            }
+          }
+        }
+
         # Habilita os processadores para todos os tenants (single-tenant setup)
         overrides = {
           defaults = {
