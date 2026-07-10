@@ -62,7 +62,7 @@ O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de
     - Se for liberado, é gerado um token de acesso EKS e aplica um _patch_ direto com a API do Kubernetes, o que é equivalente a um `kubectl rollout restart`, restaurando também o _replica count_, caso esteja abaixo do mínimo.
 4. A autorização no cluster ([`rbac.tf`][rbac.tf]) ocorre por meio da role IAM do Lambda, que é mapeada como identidade EKS e vinculada a uma _Role/RoleBinding_ Kubernetes restrita. Ela só pode realizar _get/patch_ nos Deployments explicitamente listados em `target_deployments`.
 
-| [⬆️ Top](#script-de-teste-test---traffic.sh) |
+| [⬆️ Top](#script-de-teste-test-trafficshscriptest) |
 | --- |
 
 [scriptest]: /test-traffic.sh
