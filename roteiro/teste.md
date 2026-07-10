@@ -3,7 +3,7 @@
 
 ## Script de teste [`test-traffic.sh`][scriptest]
 
-Trata-se de um gerador de tráfego sintético realista para o ToggleMaster. Ele gera requisições válidas, erros controlados (400/401/404), flags inexistentes e tokens inválidos. Ele suporta paralelismo e latências variadas para simular uma carga real e popular traces, métricas e logs nos backends de observabilidade.
+Trata-se de um gerador de tráfego sintético realista para o ToggleMaster. Ele gera requisições válidas, erros controlados (_400/401/404_), flags inexistentes e tokens inválidos. Ele suporta paralelismo e latências variadas para simular uma carga real e popular traces, métricas e logs nos backends de observabilidade.
 
 Seu objetivo é gerar tráfego de teste realista para a stack de observabilidade. Ele combina sucessos e erros para demonstrar métricas e _traces_ do Prometheus, Tempo e Loki no Grafana.
 
@@ -25,14 +25,17 @@ s com erro no Tempo, logs de erro no Loki).
 
 ### Execução
 
+```
 Uso:
-  `./test-traffic.sh [opções]`
+  ./test-traffic.sh [opções]
+
 Opções:
-  `--requests N` - Total de requisições de avaliação (_padrão: `150`_)
-  `--concurrency N` - Requisições paralelas simultâneas (_padrão: `5`_)
-  `--error-rate N` - % de requisições que devem gerar erros (_padrão: `20`_)
-  `--flag-name NAME` - Flag principal para as avaliações (_padrão: `enable-feature`_)
-  `--eval-url URL` - URL base do evaluation-service (_auto-detectado se omitido_)
+  --requests N - Total de requisições de avaliação (_padrão: 150_)
+  --concurrency N - Requisições paralelas simultâneas (_padrão: 5_)
+  --error-rate N - % de requisições que devem gerar erros (_padrão: 20_)
+  --flag-name NAME - Flag principal para as avaliações (_padrão: enable-feature_)
+  --eval-url URL - URL base do evaluation-service (_auto-detectado se omitido_)
+```
 
 <BR>
 
@@ -52,7 +55,7 @@ O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de
 
 1. O Grafana dispara o alerta enviando um _HTTP POST_ (_contact point tipo webhook_) para o API Gateway da AWS ([`apigw.tf`][apigw]).
 2. O API Gateway encaminha o _POST_ de endpoint `/selfheal` como _proxy integration_ para o Lambda ([`lambda.tf`][lambda.tf]).
-3. A função no Lambda (`handler.py`):
+3. A função no Lambda ([`handler.py`][handler.py]):
     - Valida as credenciais de autenticação.
     - Para cada alerta com status `firing`, extrai o nome do deployment do label `deployment` e verifica se está na _allowlist_ (via variável `target_deployments`).
     - Há uma histerese no DynamoDB ([`dynamo.tf`][dynamo.tf]) para evitar que o mesmo serviço não seja reiniciado repetidamente, causando oscilações.
@@ -64,6 +67,7 @@ O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de
 
 [scriptest]: /test-traffic.sh
 [selfheal]: /modules/selfheal/
+[handler.py]: /modules/selfheal/lambda_src/handler.py
 [apigw]: /modules/selfheal/apigw.tf
 [lambda.tf]: /modules/selfheal/lambda.tf
 [dynamo.tf]: /modules/selfheal/dynamo.tf

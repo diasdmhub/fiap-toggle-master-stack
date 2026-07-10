@@ -77,11 +77,11 @@ flowchart TB
         end
 
         DATA["🗄️  RDS · Valkey · SQS · Secrets Manager"]:::data
-        LAMBDA["🩹 Lambda\nSelf-Healing"]:::lambda
+        LAMBDA["🩹 Lambda Self-Healing"]:::lambda
     end
 
     %% External Alert
-    NOTIFY["📟 PagerDuty\n💬 Discord"]:::alert
+    NOTIFY["📟 PagerDuty 💬 Discord"]:::alert
 
     %% Flow
     A -->|"1. Terraform"| AWS
