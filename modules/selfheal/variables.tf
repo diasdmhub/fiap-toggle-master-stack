@@ -63,6 +63,12 @@ variable "cooldown_seconds" {
   default     = 300
 }
 
+variable "min_replicas" {
+  description = "Replica count mínimo restaurado quando o deployment é encontrado com menos réplicas que isso (ex.: alguém escalou para 0 manualmente). Deve refletir o valor default do manifesto Kubernetes do serviço."
+  type        = number
+  default     = 1
+}
+
 variable "log_retention_days" {
   description = "Retenção do CloudWatch Logs do Lambda"
   type        = number

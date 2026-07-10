@@ -93,6 +93,7 @@ resource "aws_lambda_function" "selfheal" {
       WEBHOOK_PASSWORD    = var.webhook_password
       COOLDOWN_SECONDS    = tostring(var.cooldown_seconds)
       COOLDOWN_TABLE      = aws_dynamodb_table.cooldown.name
+      MIN_REPLICAS        = tostring(var.min_replicas)
     }
   }
 
