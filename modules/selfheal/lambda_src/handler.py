@@ -41,6 +41,7 @@ WEBHOOK_PASSWORD = os.environ["WEBHOOK_PASSWORD"]
 COOLDOWN_SECONDS = int(os.environ["COOLDOWN_SECONDS"])
 COOLDOWN_TABLE = os.environ["COOLDOWN_TABLE"]
 AWS_REGION = os.environ["AWS_REGION"]
+MIN_REPLICAS = int(os.environ.get("MIN_REPLICAS", "1"))
 
 dynamodb = boto3.resource("dynamodb")
 cooldown_table = dynamodb.Table(COOLDOWN_TABLE)
@@ -118,34 +119,53 @@ def _check_and_set_cooldown(deployment_name: str) -> bool:
 
 def _restart_deployment(deployment_name: str):
     """
-    Faz o equivalente a `kubectl rollout restart deployment/<nome>`:
-    um strategic-merge-patch que atualiza a annotation
+    Faz o equivalente a `kubectl rollout restart deployment/<nome>`: um
+    strategic-merge-patch que atualiza a annotation
     kubectl.kubernetes.io/restartedAt no template do pod, forçando o
-    rolling restart.
+    rolling restart dos pods existentes.
+
+    Isso sozinho NÃO resolve o caso de alguém ter escalado o deployment
+    para 0 réplicas - "reiniciar" 0 pods continua sendo 0 pods. Por isso,
+    antes de aplicar o patch, lemos o replica count atual e, se estiver
+    abaixo de MIN_REPLICAS, restauramos ele também no mesmo patch.
     """
     token = _get_eks_token()
     ca_path = _write_ca_file()
+    ssl_context = ssl.create_default_context(cafile=ca_path)
+    url = f"{CLUSTER_ENDPOINT}/apis/apps/v1/namespaces/{NAMESPACE}/deployments/{deployment_name}"
+
+    get_request = urllib.request.Request(
+        url,
+        method="GET",
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(get_request, context=ssl_context, timeout=10) as response:
+        current = json.loads(response.read())
+    current_replicas = current.get("spec", {}).get("replicas", 0)
 
     restarted_at = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.gmtime())
-    patch_body = json.dumps(
-        {
-            "spec": {
-                "template": {
-                    "metadata": {
-                        "annotations": {
-                            "kubectl.kubernetes.io/restartedAt": restarted_at
-                        }
-                    }
+    patch_spec = {
+        "template": {
+            "metadata": {
+                "annotations": {
+                    "kubectl.kubernetes.io/restartedAt": restarted_at
                 }
             }
         }
-    ).encode("utf-8")
+    }
 
-    url = f"{CLUSTER_ENDPOINT}/apis/apps/v1/namespaces/{NAMESPACE}/deployments/{deployment_name}"
+    if current_replicas < MIN_REPLICAS:
+        logger.warning(
+            "'%s' está com %d réplica(s) (mínimo esperado: %d) - restaurando o replica count",
+            deployment_name, current_replicas, MIN_REPLICAS,
+        )
+        patch_spec["replicas"] = MIN_REPLICAS
 
-    logger.info("Enviando PATCH para %s", url)
+    patch_body = json.dumps({"spec": patch_spec}).encode("utf-8")
 
-    request = urllib.request.Request(
+    logger.info("Enviando PATCH para %s (replicas=%s)", url, patch_spec.get("replicas", "unchanged"))
+
+    patch_request = urllib.request.Request(
         url,
         data=patch_body,
         method="PATCH",
@@ -156,9 +176,7 @@ def _restart_deployment(deployment_name: str):
         },
     )
 
-    ssl_context = ssl.create_default_context(cafile=ca_path)
-
-    with urllib.request.urlopen(request, context=ssl_context, timeout=10) as response:
+    with urllib.request.urlopen(patch_request, context=ssl_context, timeout=10) as response:
         logger.info("PATCH em '%s' retornou HTTP %s", deployment_name, response.status)
         return response.status, response.read().decode("utf-8")
 
