@@ -35,6 +35,8 @@ A arquitetura do ambiente possui algumas camadas principais, descritas a seguir.
 
 De forma simplificada, este é o fluxo geral de implementação do sistema ToggleMaster:
 
+> _Dependendo da resolução do navegador, o diagrama abaixo pode ficar um pouco distorcido._
+
 ```mermaid
 flowchart TB
     %% Styles
