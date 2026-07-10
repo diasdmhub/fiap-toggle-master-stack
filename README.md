@@ -33,6 +33,44 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 - **K8s OTel/Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, trazendo informações sobre o estado e saúde do ambiente.
 - **AWS Lambda** - É utilizado para a automação de _self-healing_ dos microserviços.
 
+De forma simplificada, este é o fluxo geral de implementação do sistema ToggleMaster:
+
+```mermaid
+flowchart LR
+    %% Styles
+    classDef repo fill:#E3F2FD,stroke:#1E88E5,color:#0D47A1
+    classDef ci fill:#FFF3E0,stroke:#FB8C00,color:#E65100
+    classDef aws fill:#F3E5F5,stroke:#8E24AA,color:#4A148C
+    classDef deploy fill:#E8F5E9,stroke:#43A047,color:#1B5E20
+
+    %% Source
+    A["📦 Repositório"]:::repo
+
+    %% CI/CD
+    B["⚙️ Build / GitHub Actions"]:::ci
+
+    %% AWS Area
+    subgraph AWS["☁️ AWS"]
+        direction TB
+
+        ECR["🗂️ ECR"]:::aws
+
+        subgraph EKS["🚢 EKS"]
+            direction LR
+
+            ArgoCD["🔄 ArgoCD"]:::deploy
+            C["🎛️ ToggleMaster"]:::deploy
+        end
+    end
+
+    %% Flow
+    A -->|"1. Terraform"| AWS
+    A -->|"2. Actions"| B
+    B -->|"3. Push Image"| ECR
+    ArgoCD -->|"4. Sync Manifests"| A
+    ArgoCD -->|"5. Deploy / Kustomize"| C
+```
+
 <BR>
 
 ## 🔑 Prerequisitos
@@ -65,15 +103,19 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 
 ## 📝 Considerações
 
-🔶 ⚠️ A implementaçao de APMs como Datadog ou New Relic **não foi utilizada** nesta fase com as seguintes considerações:
+🔶 **APMs como Datadog ou New Relic não foram implementados** nesta fase do projeto com as seguintes considerações:
 
 - **Datadog**: [exige conexão com serviços terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e rastreamento biométrico **altamente invasivo**. Esses dados podem ser usados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, além de auxiliarem em perfilarizações comerciais e treinamentos de IA.
 - **New Relic**: o [portal tem recusado conexões][newrelic] (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Portanto, não foi possível acessar os recursos desse serviço.
 - **Portanto**, entendo que essas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Não foram percebidos benefícios reais aos usuários para fins educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o _trace_ dos serviços, pois ele faz parte do ambiente Grafana sendo é compatível com o OpenTelemetry, também não possui custos e é open-source.
 
+🔶 O **PagerDuty** foi utilizado como central de eventos para a ToggleMaster pois permite um gerenciamento de eventos e incidentes gerais integrado a times de TI, e alta integração com diversas outras ferramentas de mercado. O **OpsGenie** é desconsiderado neste projeto pois foi anunciado o "fim-de-vida" da ferramenta pelo fabriante. Outra alternativa interessante para o projeto pode ser o [**Grafana IRM**][grafanairm] pois já é integrado ao ecossistema Grafana e os demais recursos utilizados, porém, também possui custo extra.
+
+> **Vale ressaltar que também existem [outras ferramentas][alternative] de gerenciamento de eventos e escalonamento sem custo e alta diversidade de integrações e automações possíveis, incluindo IA, oferecendo maior privacidade aos usuários. Elas não foram testadas neste ambiente para evitar desvio de objetivo.**
+
 🔶 A **_stack_ de monitoração** tem o perfil de uma ferramenta de plataforma, não uma aplicação de negócio. Por isso ela foi adicionada como um novo módulo de monitoramento do Terraform (`/modules/mon`).
 
-🔶 O ambiente utiliza o **AWS Lambda** para automatizar o _self-healing_ dos microserviços e foi escolhido por estar no próprio ambiente da AWS e ter maior integração com os demais recursos. O Lambda também é compatível com o Terraform e, portanto, também é um módulo adicional.
+🔶 O ambiente utiliza o **AWS Lambda** para automatizar o _self-healing_ dos microserviços e foi escolhido por estar no próprio ambiente da AWS e ter maior integração com os demais recursos. O Lambda também é compatível com o Terraform e, portanto, também se tornou um módulo adicional.
 
 [fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [authserv]: https://github.com/FIAP-TCs/auth-service
@@ -89,3 +131,5 @@ A arquitetura do ambiente tem algumas camadas princiais descritas abaixo.
 [github_edu]: https://education.github.com/pack
 [newrelic]: https://newrelic.com
 [grafanatempo]: https://grafana.com/oss/tempo
+[alternative]: https://alternativeto.net/software/pagerduty/?license=free&sort=likes
+[grafanairm]: https://grafana.com/products/cloud/irm
