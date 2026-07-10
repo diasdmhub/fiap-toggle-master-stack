@@ -40,3 +40,6 @@ override.tf.json
 .terraformrc
 .terraform.lock.hcl
 terraform.rc
+
+# Ignora IA
+CLAUDE.md
