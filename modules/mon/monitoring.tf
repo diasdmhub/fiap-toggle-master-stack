@@ -116,32 +116,17 @@ resource "helm_release" "prometheus_stack" {
           }
         }
 
-        # Provisiona o contact point webhook e a regra de alerta usadas
-        # pela automação de self-healing (Lambda). A notification policy
-        # que liga essa regra ao contact point (junto do PagerDuty) é
-        # configurada manualmente, para não sobrescrever a política já
-        # existente (ver roteiro).
+        # Provisiona a regra de alerta usada pela automação de self-healing.
+        # O contact point NÃO fica aqui - é criado manualmente na UI do
+        # Grafana (Alerting > Contact points > Webhook), porque o
+        # file-provisioning do Grafana não persiste corretamente
+        # secureSettings (Basic Auth) em contact points do tipo webhook
+        # nessa versão, e gerenciar via provider Terraform exigiria acesso
+        # de rede à API do Grafana (port-forward) durante todo `apply` -
+        # inviável num bootstrap do zero. A notification policy que liga
+        # essa regra ao contact point (junto do PagerDuty) também é
+        # configurada manualmente - ver roteiro.
         alerting = {
-          "contactpoints.yaml" = {
-            apiVersion = 1
-            contactPoints = [{
-              orgId = 1
-              name  = "selfheal-webhook"
-              receivers = [{
-                uid  = "selfheal-webhook-1"
-                type = "webhook"
-                settings = {
-                  url        = var.selfheal_webhook_url
-                  httpMethod = "POST"
-                  username   = var.selfheal_webhook_username
-                }
-                secureSettings = {
-                  password = var.selfheal_webhook_password
-                }
-              }]
-            }]
-          }
-
           "rules.yaml" = {
             apiVersion = 1
             groups = [{

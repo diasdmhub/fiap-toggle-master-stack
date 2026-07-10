@@ -176,3 +176,9 @@ variable "selfheal_cooldown_seconds" {
   type        = number
   default     = 300
 }
+
+variable "selfheal_min_replicas" {
+  description = "Replica count mínimo que o self-healing restaura quando encontra um deployment com menos réplicas que isso (ex.: alguém escalou para 0 manualmente)"
+  type        = number
+  default     = 1
+}

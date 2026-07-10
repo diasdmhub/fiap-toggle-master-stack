@@ -62,22 +62,6 @@ variable "grafana_service_type" {
 
 # Self-healing
 #############################
-variable "selfheal_webhook_url" {
-  description = "URL do endpoint de self-healing (API Gateway -> Lambda)"
-  type        = string
-}
-
-variable "selfheal_webhook_username" {
-  description = "Usuário HTTP Basic Auth exigido pelo Lambda de self-healing"
-  type        = string
-}
-
-variable "selfheal_webhook_password" {
-  description = "Senha HTTP Basic Auth exigida pelo Lambda de self-healing"
-  type        = string
-  sensitive   = true
-}
-
 variable "selfheal_target_deployments" {
   description = "Deployments monitorados pela regra de alerta de self-healing"
   type        = list(string)

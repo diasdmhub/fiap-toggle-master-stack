@@ -151,10 +151,7 @@ module "mon" {
   otel_chart_version       = var.otel_chart_version
   tempo_chart_version      = var.tempo_chart_version
 
-  # Provisiona o contact point + regra de alerta do self-healing
-  selfheal_webhook_url      = module.selfheal.webhook_url
-  selfheal_webhook_username = var.selfheal_webhook_username
-  selfheal_webhook_password = var.selfheal_webhook_password
+  # Provisiona a regra de alerta do self-healing
   selfheal_target_deployments = var.selfheal_target_deployments
 
   depends_on = [module.eks, module.selfheal]
@@ -175,6 +172,7 @@ module "selfheal" {
   webhook_username          = var.selfheal_webhook_username
   webhook_password          = var.selfheal_webhook_password
   cooldown_seconds          = var.selfheal_cooldown_seconds
+  min_replicas              = var.selfheal_min_replicas
 
   depends_on = [module.eks, module.vpc]
 }

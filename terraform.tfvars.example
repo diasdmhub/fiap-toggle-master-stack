@@ -15,7 +15,12 @@ grafana_service_type = "ClusterIP"
 selfheal_webhook_password = "togglemaster"   # Troque por uma senha segura
 # selfheal_webhook_username   = "grafana-selfheal"
 # selfheal_cooldown_seconds   = 300
+# selfheal_min_replicas       = 1
 # selfheal_target_deployments = ["auth-service", "flag-service", "targeting-service", "evaluation-service"]
+
+# O contact point "selfheal-webhook" é criado manualmente na UI do Grafana
+# (Alerting > Contact points > Webhook), usando a URL do output
+# selfheal_outputs.webhook_url e Basic Auth com selfheal_webhook_username/password.
 
 # Inclua a versão do chart para fixá-la
 # prometheus_chart_version = ""
