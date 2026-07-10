@@ -146,6 +146,9 @@ flowchart TB
 
 🔶 O ambiente utiliza o **AWS Lambda** para automatizar a auto-recuperação dos microserviços, pois está no próprio ambiente da AWS e tem maior integração com os demais recursos. Como o Lambda é compatível com o Terraform e, também se tornou um módulo adicional.
 
+| [⬆️ Top](#tech-challenge-fase-4---stack-togglemaster) |
+| --- |
+
 [fase3]: https://github.com/diasdmhub/fiap-toggle-master-iaas
 [authserv]: https://github.com/FIAP-TCs/auth-service
 [flagserv]: https://github.com/FIAP-TCs/flag-service
