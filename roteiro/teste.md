@@ -7,11 +7,11 @@ Trata-se de um gerador de tráfego sintético realista para o ToggleMaster. Ele 
 
 Seu objetivo é gerar tráfego de teste realista para a stack de observabilidade. Ele combina sucessos e erros para demonstrar métricas e _traces_ do Prometheus, Tempo e Loki no Grafana.
 
-Ele realiza automaticamente as seguintes ações:
+O script realiza automaticamente as seguintes ações:
 
 - **Descobre o endpoint** do `evaluation-service` e valida seu estado (`/health`);
 - **Abre port-forwards** internos para os microserviços `auth` (`8001`), `flag` (`8002`) e `targeting` (`8003`), usados para as chamadas administrativas de configuração;
-- **Obtém credenciais**: busca a _master key_ no AWS Secrets Manager e cria uma chave de API de teste via `auth-service`;
+- **Obtém credenciais** buscando a _master key_ no AWS Secrets Manager e cria uma chave de API de teste via `auth-service`;
 - **Cria flags e regras de segmentação** de teste:
     - `enable-feature` (ou `--flag-name`) a 50%;
     - `dark-launch` a 10%;
@@ -35,19 +35,23 @@ Opções:
   --error-rate N - % de requisições que devem gerar erros (_padrão: 20_)
   --flag-name NAME - Flag principal para as avaliações (_padrão: enable-feature_)
   --eval-url URL - URL base do evaluation-service (_auto-detectado se omitido_)
+
+Prerequisitos:
+  - AWS CLI
+  - Kubectl conectado ao cluster K8s
 ```
 
 <BR>
 
 ## Auto recuperação com o AWS Lambda
 
-O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de auto-recuperação (_self-healing_) para os microsserviços do ToggleMaster, acionado quando o Grafana detecta um serviço com erro. A função do Lambda reinicia automaticamente o Deployment correspondente no EKS, sem intervenção humana.
+O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de auto-recuperação (_self-healing_) para os microsserviços do ToggleMaster, e é acionado quando o Grafana detecta um serviço com erro. A função do Lambda reinicia automaticamente o Deployment correspondente no EKS e o restaura ao estado inicial do manifesto, sem intervenção humana.
 
 ### Escolha do Lambda
 
 - Execução sob demanda com baixo custo: o self-healing é execudado apenas quando um alerta é disparado.
-- Superfície de ataque mínima: não são necessárias credenciais AWS de longa duração nem de um `kubeconfig` persistido, pois gera o token EKS é gerado sob demanda via STS.
-- Isolamento do plano de controle: mesmo se o próprio cluster/namespace toggle estiver degradado, continua funcional, pois roda fora do cluster via VPC config e SG dedicado.
+- Superfície de ataque mínima: não são necessárias credenciais AWS de longa duração nem de um `kubeconfig` persistido, pois o token EKS é gerado sob demanda via STS.
+- Isolamento do plano de controle: mesmo se o próprio cluster/namespace `toggle` estiver degradado, continua funcional, pois roda fora do cluster via VPC config e SG dedicado.
 - Simplicidade operacional: não há dependências externas (apenas `stdlib` e `boto3`, já no _runtime_), empacotamento automático via `archive_file` no `terraform apply`, e integração nativa com o API Gateway, o IAM e o DynamoDB. Tudo fica dentro do mesmo modelo de infraestrutura como código já usado no restante do projeto.
 - Há _statelessness_ com estado mínimo externalizado: o _cooldown_ fica no DynamoDB com TTL automático. Dessa forma, o Lambda não precisa manter estado entre invocações, o que combina bem com o modelo de execução efêmera.
 
@@ -61,6 +65,24 @@ O módulo [`modules/selfheal`][selfheal] do Terraform implementa um mecanismo de
     - Há uma histerese no DynamoDB ([`dynamo.tf`][dynamo.tf]) para evitar que o mesmo serviço não seja reiniciado repetidamente, causando oscilações.
     - Se for liberado, é gerado um token de acesso EKS e aplica um _patch_ direto com a API do Kubernetes, o que é equivalente a um `kubectl rollout restart`, restaurando também o _replica count_, caso esteja abaixo do mínimo.
 4. A autorização no cluster ([`rbac.tf`][rbac.tf]) ocorre por meio da role IAM do Lambda, que é mapeada como identidade EKS e vinculada a uma _Role/RoleBinding_ Kubernetes restrita. Ela só pode realizar _get/patch_ nos Deployments explicitamente listados em `target_deployments`.
+
+De forma simplificada, este é o fluxo de execução do _self-healing_:
+
+```mermaid
+  flowchart TD
+      A[Grafana alerta] -->|POST webhook| B[API Gateway <code>/selfheal</code>]
+      B -->|Proxy integration| C[Lambda: <code>handler.py</code>]
+      
+      C --> D{Credenciais válidas<BR/>e alerta <i>firing</i>?}
+      D -->|Não| Z[Ignora]
+      D -->|Sim| E[Extrai label<BR/>e checa <i>allowlist</i> + <i>cooldown</i> DynamoDB]
+      
+      E --> F{Liberado?}
+      F -->|Não| Z
+      F -->|Sim| G[Gera token EKS via STS<BR/>e aplica <i>patch</i> no deployment<BR/>≈ <i>rollout restart</i><BR/>+ restaura réplicas]
+      
+      G --> H[RBAC autoriza a Role do Lambda<BR/>apenas nos deployments da <i>allowlist</i>]
+```
 
 | [⬆️ Top](#script-de-teste-test-trafficshscriptest) |
 | --- |
