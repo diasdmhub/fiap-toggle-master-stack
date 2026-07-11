@@ -16,7 +16,7 @@ O sistema ToggleMaster é segmentado em 5 microsserviços altamente integrados e
 
 Os microserviços são executados em um _cloud provider_, a AWS, para permitir alta flexibilidade, escalabilidade e segurança ao sistema. A infraestrutura da AWS é implementada com o Terraform, e foi segmentada em módulos a fim de automatizar e flexibilizar a criação do ambiente.
 
-Com o ambiente AWS criado, os microsserviços, então, são executados em um cluster Kubernetes (K8s), o EKS da AWS. Diversos manifestos K8s foram criados para definir como o sistema ToggleMaster deve ser executado e escalado nesse ambiente. Também é implementado no cluster o ArgoCD para que o _deploy_ seja automatizado e sincronizado com o repositório Git, tornando-o o ponto central de controle e manutenção do código do sistema.
+Com o ambiente AWS criado, os microsserviços, então, são executados em um cluster Kubernetes (K8s), o EKS da AWS. Para isso, diversos manifestos K8s foram criados para definir como o sistema ToggleMaster deve ser executado e escalado nesse ambiente. Também é implementado no cluster o ArgoCD para que o _deploy_ seja automatizado e sincronizado com o repositório Git, tornando-o o ponto central de controle e manutenção do código do sistema.
 
 <BR>
 
@@ -24,18 +24,18 @@ Com o ambiente AWS criado, os microsserviços, então, são executados em um clu
 
 A arquitetura do ambiente possui algumas camadas principais, descritas a seguir.
 
-- **Terraform** - Provisiona toda a infraestrutura, como VPC, EKS, RDS, Valkey, SQS, Secrets, políticas IAM e stack de monitoramento, etc.
+- **Terraform** - Provisiona toda a infraestrutura, como VPC, EKS, RDS, Valkey, SQS, Secrets, políticas IAM, pilha de monitoramento, etc.
 - **CI/CD** - O fluxo de GitOps é realizado com o GitHub Actions que constrói as imagens e as envia ao ECR utilizando o OIDC. O ArgoCD busca os dados no repositório para a implementação no cluster Kubernetes.
-- **AWS EKS** - O cluster Kubernetes que foi dividido em dois namespaces principais:
-    - No **`toggle`**, ficam os cinco microserviços, cada um com suas próprias responsabilidades. O `evaluation-service` chama internamente o `flag-service` e o `targeting-service`, e todos buscam a autorização no `auth-service`. O `analytics-service` consome as mensagens do SQS.
+- **AWS EKS** - O cluster Kubernetes foi dividido em dois _namespaces_ principais:
+    - No **`toggle`**, ficam os cinco microserviços, cada um com suas próprias responsabilidades. O `evaluation-service` é chamado pelo usuário final e chama internamente o `flag-service` e o `targeting-service`, e todos buscam a autorização no `auth-service`. O `analytics-service` consome as mensagens do SQS.
     - No **`monitoring`**, o _OTel Collector_ é o ponto central para o qual todos os serviços enviam telemetria OTLP, e ele roteia métricas para o Prometheus, logs para o Loki e traces/spans para o Tempo. O Grafana consulta esses dados para as consultas e vizualização nas dashboards.
-- **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`; o ElastiCache Valkey/Redis faz o cache do microserviço `evaluation`; o **SQS** recebe as publicações do `evaluation`, que são consumidas pelo `analytics`. Por fim, o **Secrets Manager** gerencia as credenciais.
+- **AWS SQS/RDS/Valkey/Secrets** - O **RDS** é a base de dados dos microserviços `auth`, `flag` e `targeting`; o **ElastiCache Valkey/Redis** faz o _cache_ do microserviço `evaluation`; o **SQS** recebe as publicações do `evaluation`, que são consumidas pelo `analytics`. Por fim, o **Secrets Manager** gerencia as credenciais.
 - **K8s OTel/Prometheus/Loki/Tempo/Grafana** - Esta é a camada de métricas e observabilidade, que traz informações sobre o estado e a saúde do ambiente.
 - **AWS Lambda** - É utilizado para a automação de recuperação dos microserviços.
 
-De forma simplificada, este é o fluxo geral de implementação do sistema ToggleMaster:
+De forma simplificada, este é o fluxo geral de implementação do sistema ToggleMaster, já incluindo a stack de monitoramento:
 
-> _Dependendo da resolução do navegador, o diagrama abaixo pode ficar um pouco distorcido._
+> _Dependendo da resolução do navegador, o diagrama abaixo pode ficar um pouco distorcido. Também pode-se visualizar o [diagrama neste link][mermaidlive]._
 
 ```mermaid
 flowchart TB
@@ -136,17 +136,17 @@ flowchart TB
 
 🔶 **As APMs Datadog e New Relic não foram implementadas** nesta fase do projeto, considerando os seguintes aspectos:
 
-- **Datadog**: [exige conexão com serviços de terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub exige, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e um rastreamento biométrico **altamente invasivo** para registro. Esses dados podem ser utilizados pelo GitHub e seus parceiros, incluindo a Datadog, sem garantias reais de privacidade, e podem de auxiliar em perfilarizações comerciais e treinamentos de IA.
+- **Datadog**: [exige conexão com serviços de terceiros (_GitHub_)][datadog_edu] para acesso educativo. Por sua vez, o GitHub exige, por meio de seu [pacote para estudantes][github_edu], exige informações de identificação governamentais e um rastreamento biométrico **altamente invasivo** para registro. Ambas as empresas coletam dados pessoais, comportamentais e de rastreamento de usuários, que podem ser compartilhados com terceiros, utilizados em perfilarizações comerciais, marketing, treinamento de IA, entre outras ações. Tudo isso ocorre sem um prazo de retenção definido ou garantias reais de privacidade.
 - **New Relic**: o [portal tem recusado conexões][newrelic] (_`ERR_CONNECTION_REFUSED`_) durante o desenvolvimento desta fase. Não foi possível acessar os recursos desse serviço.
 - Entendo, **portanto**, que essas são ferramentas privadas de custo elevado e com acesso educacional relativamente invasivo. Não foram percebidos benefícios reais para os usuários em contextos educacionais. Como existem ferramentas alternativas, o [**Grafana Tempo**][grafanatempo] é utilizado no projeto para o rastreamento dos serviços, pois faz parte do ecossistema Grafana, é compatível com o OpenTelemetry e não tem custos, sendo _open-source_.
 
-🔶 O **PagerDuty** foi utilizado como central de eventos para a ToggleMaster, pois permite uo gerenciamento integrado de eventos e incidentes gerais com equipes de TI e alta integração com diversas outras ferramentas de mercado. O **OpsGenie** é desconsiderado neste projeto, pois o fabricante [anunciou o "fim-de-vida" da ferramenta][fimvida]. Uma alternativa interessante para o projeto é o [**Grafana IRM**][grafanairm], que já é integrado ao ecossistema Grafana e aos demais recursos utilizados. No entanto, ele também possui um custo adicional.
+🔶 O **PagerDuty** foi utilizado como central de eventos para a ToggleMaster, pois permite o gerenciamento integrado de eventos e incidentes gerais com equipes de TI e alta integração com diversas outras ferramentas de mercado. O **OpsGenie** é desconsiderado neste projeto, pois o fabricante [anunciou o "fim-de-vida" da ferramenta][fimvida]. Uma alternativa interessante para o projeto é o [**Grafana IRM**][grafanairm], que já é integrado ao ecossistema Grafana e aos demais recursos utilizados. No entanto, ele também possui um custo adicional.
 
-> **É importante destacar que também existem [outras ferramentas][alternative] de gerenciamento de eventos e escalonamento que não têm custo, oferecem alta diversidade de integrações e automações possíveis (incluindo IA) e oferecem maior privacidade aos usuários. Elas não foram testadas neste ambiente para evitar o desvio do objetivo.**
+> **É importante destacar que também existem [outras ferramentas][alternative] de gerenciamento de eventos e escalonamento que não têm custo, oferecem alta diversidade de integrações e automações possíveis (incluindo IA) e oferecem maior privacidade aos usuários. Elas não foram testadas neste ambiente para fins de celeridade e evitar o desvio do objetivo.**
 
 🔶 A **_stack_ de monitoração** tem o perfil de uma ferramenta de plataforma, não de uma aplicação de negócio. Por isso, foi adicionada como um novo módulo de monitoramento do Terraform ([`/modules/mon`][monitoring]).
 
-🔶 O ambiente utiliza o **AWS Lambda** para automatizar a auto-recuperação dos microserviços, pois está no próprio ambiente da AWS e tem maior integração com os demais recursos. Como o Lambda é compatível com o Terraform e, também se tornou um módulo adicional.
+🔶 O ambiente utiliza o **AWS Lambda** para automatizar a auto-recuperação dos microserviços, pois está no próprio ambiente da AWS e tem maior integração com os demais recursos. Como o Lambda é compatível com o Terraform, também se tornou um módulo adicional.
 
 | [⬆️ Top](#tech-challenge-fase-4---stack-togglemaster) |
 | --- |
@@ -157,6 +157,7 @@ flowchart TB
 [targetserv]: https://github.com/FIAP-TCs/targeting-service
 [evalserv]: https://github.com/FIAP-TCs/evaluation-service
 [analyticserv]: https://github.com/FIAP-TCs/analytics-service
+[mermaidlive]: https://mermaids.cc/#GYGw9g7gxgFghgJwC4AIAqAhAUC3KCk+KAykgJ4gCmAzjnlCHNdQCKXAoKUAOYKwASxAgAXAGIAogGYAYgCYZLADTUkCMAGtK4gIwSAHPokBWJVDDgE4gAwsALAHYAgjrq4GTVuxRQB-IaJiMsFSEtYqapraQRj6AMLW4eaW4hIAbMY6iW4+jMxsHHAQ1P7C4jKhxjKmqupa4kZydk5OZhZgVmLNOnbxOR753gAmPOBkpYEG1RIAnBF10XZSTtaObSliOhjGEnLW-XleHENwSHAT5RizEg7zUeIs+ks6pskd4hgVadZxB54FKAAtmAAHYXSTWGQOGStWr3MSJfRSfQydbvBGrez7PC5f7eRiAgBGJ3BwUUNzu9SCMyc+jkr3anXSmWyOIGRxQcCoyFJTnJtzhVKWKzWbyZGSy2JyhBIYAArggoJQck4ANoAIkAvBuAM52UAAlHhgagCJAAZ4QAjA6oAuiI7VxeFhpUQ4gBJAD0cRYOQwGsAmWSAeD+UBg5UIhih3SgAOImgAScsJKCcUCQlpB1BtdpEvidOJlTgA6sQk1w4DlqAmAOYIODcGBJosawCAZEHC8QbTkcUMBFwU2n0NhO3gJHE9RrNYAh3aDKBHeszdqKtCHuArhOrtfrEgA0sRx4AivZnO47OJPeG7vdToIHy5PTgQlbAXvHgBBdksPr3zkQjbhjXOnk+ruudYoAAcsQaAAPJRlGAAyEgaiCcCAjQ3BwEqIgoEgYCVpWVDHv+BHnpQfZXpgN4EXEGqADwbgDZ+9OACyAhQOo1CUAgABuAgAOdGug2G4ZQ9FMEgbGft+v4ETilAgkMf6SSggE1sBYH0RBIEIUhKFodoQKgiaHQCCClb4fJXY9sRl5gmRpknhBaASDB46AIc7KB2ZQIAoHEFhUCmHSfsCILkf+AAKMFoOOgBTOygwXqMhSAwJQcolAA7SgMGaH4qVoJQgK8P5oJBaeUZ6ny46ABM70Y1sAcCIflgU2dJskEY1ckniwThoGqWqACO7056iwxapQAalyWjjKlxAAIqDSQxFcEgJRCYhlaibadonGcN4wU49EYO1GqAHwbgCee2lSHEucxDucAAC0saUFyhnGWtIgEudOQtc6M4AB4iQgiEeU43JIDkIF2a6MgAJrjoA+zvRXAK0ICwcrkCgmqADU7KAsAI1DmAgQyflybHA59MjgBAKooNd10AHwAD7qjoAB06BsVVHSAuqtMNsQFNU3T6pyMzyaWRmXPYDiGCUzT9NSMzwVJfWrqAvDlCczOo4qvej4sFL-N2MzxBkCCUAoEtAjADQC1q04mvvjrfP08YzNsD+YDjJGW5JVhgICAAXqrXO-DicQoAAPA76onEMRpq+1nU5CHEciVQcUWucdkwcFat2Q5OQ5zBuvRWFOShWghfFXyOQVzIuv02kzMFpQhIwGAmhq9tu3tVXJU1xH9dJkDTBq6DaDgxDOQd3tTi1+q+jMwaqiIKgkYL1AhNq3EQA
 [awscli]: https://aws.amazon.com/cli
 [terraform]: https://developer.hashicorp.com/terraform/install
 [kuberepo]: https://kubernetes.io/docs/tasks/tools
