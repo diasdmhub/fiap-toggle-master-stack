@@ -11,6 +11,8 @@ resource "helm_release" "keda" {
   version    = var.chart_version != "" ? var.chart_version : null
   namespace  = kubernetes_namespace_v1.keda.metadata[0].name
 
+  disable_openapi_validation = true
+
   set = [
     {
       name  = "watchNamespace"
