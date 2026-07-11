@@ -32,6 +32,8 @@ resource "helm_release" "prometheus_stack" {
   version    = var.prometheus_chart_version != "" ? var.prometheus_chart_version : null
   namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
 
+  disable_openapi_validation = true
+
   # ServerSideApply necessário devido ao tamanho das anotações dos CRDs
   set = [
     {
@@ -251,6 +253,8 @@ resource "helm_release" "loki" {
   version    = var.loki_chart_version != "" ? var.loki_chart_version : null
   namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
 
+  disable_openapi_validation = true
+
   values = [
     yamlencode({
       # Modo SingleBinary: simples para lab/staging
@@ -355,6 +359,8 @@ resource "helm_release" "tempo" {
   chart      = "tempo"
   version    = var.tempo_chart_version != "" ? var.tempo_chart_version : null
   namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  disable_openapi_validation = true
 
   values = [
     yamlencode({
@@ -473,6 +479,8 @@ resource "helm_release" "otel_collector" {
   chart      = "opentelemetry-collector"
   version    = var.otel_chart_version != "" ? var.otel_chart_version : null
   namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  disable_openapi_validation = true
 
   values = [
     yamlencode({

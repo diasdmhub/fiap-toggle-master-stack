@@ -76,6 +76,8 @@ resource "helm_release" "external_secrets" {
   version    = var.chart_version != "" ? var.chart_version : null
   namespace  = kubernetes_namespace_v1.external_secrets.metadata[0].name
 
+  disable_openapi_validation = true
+
   set = [
     {
       name  = "serviceAccount.name"
