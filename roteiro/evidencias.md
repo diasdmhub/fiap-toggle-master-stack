@@ -16,7 +16,7 @@ Os manifestos dessas dashboards estão disponíveis no diretório `/dash` do rep
 
 ### Trace distribuído no Tempo
 
-Esta é uma demonstração do _trace_ de requisições no Grafana Tempo.
+Com o Tempo, as requisições podem ser rastreadas rapidamente, conforme demonstrado na imagem a seguir.
 
 #### Requisição:
 
@@ -35,12 +35,12 @@ Esta é uma demonstração do _trace_ de requisições no Grafana Tempo.
 
 O Discord foi escolhido como uma das plataformas de notificação devido à sua simplicidade de integração. A imagem a seguir evidencia essa integração.
 
-![Notificação Discord](./notificacao_discord.jpg)
+![Notificação Discord](./notificacao_discord.png)
 
 <BR>
 
 ### Registro da automação de Self-Healing no AWS Lambda
 
-Com o Tempo, as requisições podem ser rastreadas rapidamente, conforme demonstrado na imagem a seguir.
+Com o CloudWatch da AWS, as requisições à função de autorecuperação podem ser identificadas com facilidade, conforme demonstrado na imagem a seguir.
 
 ![Log Lambda](./self_healing_lambda_log.png)
