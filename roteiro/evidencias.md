@@ -18,6 +18,15 @@ Os manifestos dessas dashboards estão disponíveis no diretório `/dash` do rep
 
 Esta é uma demonstração do _trace_ de requisições no Grafana Tempo.
 
+#### Requisição:
+
+```shell
+# curl "http://aef8d90b5616c4bb691a9c89892d7274-2051342699.us-east-1.elb.amazonaws.com:8004/evaluate?user_id=testando-100&flag_name=enable-feature"
+{"flag_name":"enable-feature","user_id":"testando-100","result":true}
+```
+
+#### Consulta:
+
 ![Trace Distribuído Tempo](./grafana_tempo_trace.png)
 
 <BR>
@@ -34,13 +43,4 @@ O Discord foi escolhido como uma das plataformas de notificação devido à sua 
 
 Com o Tempo, as requisições podem ser rastreadas rapidamente, conforme demonstrado na imagem a seguir.
 
-#### Requisição:
-
-```shell
-# curl "http://aef8d90b5616c4bb691a9c89892d7274-2051342699.us-east-1.elb.amazonaws.com:8004/evaluate?user_id=testando-100&flag_name=enable-feature"
-{"flag_name":"enable-feature","user_id":"testando-100","result":true}
-```
-
-#### Consulta:
-
-![Notificação Discord](./self_healing_lambda_log.png)
+![Log Lambda](./self_healing_lambda_log.png)
