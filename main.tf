@@ -96,7 +96,7 @@ module "es" {
   oidc_provider_arn = module.eks.eks_oidc_provider_arn
   oidc_provider_url = module.eks.eks_oidc_provider_url
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, module.argo]
 }
 
 module "sa" {
@@ -120,7 +120,7 @@ module "keda" {
   cluster_name     = module.eks.eks_cluster_name
   role_arn         = module.sa.role_arn
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, module.es]
 }
 
 module "secrets" {
