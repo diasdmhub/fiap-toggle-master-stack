@@ -1,17 +1,3 @@
-terraform {
-  required_providers {
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 3.1"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 3.1"
-    }
-  }
-}
-
-
 # Namespace compartilhado para toda a stack de monitoração
 resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
