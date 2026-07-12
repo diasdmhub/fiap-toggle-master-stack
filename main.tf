@@ -81,7 +81,7 @@ module "argo" {
   cluster_ca       = module.eks.eks_cluster_ca
   cluster_name     = module.eks.eks_cluster_name
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, module.mon]
 }
 
 
@@ -96,7 +96,7 @@ module "es" {
   oidc_provider_arn = module.eks.eks_oidc_provider_arn
   oidc_provider_url = module.eks.eks_oidc_provider_url
 
-  depends_on = [module.eks, module.argo]
+  depends_on = [module.eks]
 }
 
 module "sa" {
@@ -154,7 +154,7 @@ module "mon" {
   # Provisiona a regra de alerta do self-healing
   selfheal_target_deployments = var.selfheal_target_deployments
 
-  depends_on = [module.eks, module.selfheal]
+  depends_on = [module.eks, module.selfheal, module.secrets, module.keda]
 }
 
 module "selfheal" {
